@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
+import java.io.File
 
 class PlayerActivity : AppCompatActivity() {
 
@@ -16,19 +17,26 @@ class PlayerActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_player)
 
-        val playerView = findViewById<PlayerView>(R.id.playerView)
+        val playerView =
+            findViewById<PlayerView>(
+                R.id.playerView
+            )
 
         player = ExoPlayer.Builder(this).build()
 
         playerView.player = player
 
-        val videoUri = intent.getStringExtra("videoUri")
+        val videoPath =
+            intent.getStringExtra("videoUri")
 
-        if (videoUri != null) {
+        if (videoPath != null) {
 
-            val mediaItem = MediaItem.fromUri(
-                Uri.parse(videoUri)
-            )
+            val file = File(videoPath)
+
+            val mediaItem =
+                MediaItem.fromUri(
+                    Uri.fromFile(file)
+                )
 
             player.setMediaItem(mediaItem)
 
