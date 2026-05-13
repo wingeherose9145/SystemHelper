@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.widget.ImageButton
+import android.widget.LinearLayout
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
@@ -18,9 +19,9 @@ class PlayerActivity : AppCompatActivity() {
 
     private lateinit var player: ExoPlayer
 
-    private lateinit var controlLayout: View
-
     private lateinit var seekBar: SeekBar
+
+    private lateinit var topControls: LinearLayout
 
     private lateinit var videoList: ArrayList<String>
 
@@ -30,6 +31,15 @@ class PlayerActivity : AppCompatActivity() {
         Handler(Looper.getMainLooper())
 
     private var isPortrait = false
+
+    private val hideRunnable = Runnable {
+
+        if (!player.isPlaying) return@Runnable
+
+        topControls.visibility = View.GONE
+
+        seekBar.visibility = View.GONE
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,8 +58,8 @@ class PlayerActivity : AppCompatActivity() {
                 R.id.playerView
             )
 
-        controlLayout =
-            findViewById(R.id.controlLayout)
+        topControls =
+            findViewById(R.id.topControls)
 
         seekBar =
             findViewById(R.id.seekBar)
@@ -88,7 +98,9 @@ class PlayerActivity : AppCompatActivity() {
 
         playVideo()
 
-        controlLayout.visibility = View.GONE
+        topControls.visibility = View.GONE
+
+        seekBar.visibility = View.GONE
 
         playerView.setOnClickListener {
 
@@ -96,15 +108,17 @@ class PlayerActivity : AppCompatActivity() {
 
                 player.pause()
 
-                controlLayout.visibility =
+                topControls.visibility =
+                    View.VISIBLE
+
+                seekBar.visibility =
                     View.VISIBLE
 
             } else {
 
                 player.play()
 
-                controlLayout.visibility =
-                    View.GONE
+                startAutoHide()
             }
         }
 
@@ -167,7 +181,23 @@ class PlayerActivity : AppCompatActivity() {
 
         player.play()
 
-        controlLayout.visibility = View.GONE
+        startAutoHide()
+    }
+
+    private fun startAutoHide() {
+
+        topControls.visibility =
+            View.VISIBLE
+
+        seekBar.visibility =
+            View.VISIBLE
+
+        handler.removeCallbacks(hideRunnable)
+
+        handler.postDelayed(
+            hideRunnable,
+            3000
+        )
     }
 
     private fun startSeekBarUpdate() {
@@ -223,7 +253,10 @@ class PlayerActivity : AppCompatActivity() {
 
         player.pause()
 
-        controlLayout.visibility =
+        topControls.visibility =
+            View.VISIBLE
+
+        seekBar.visibility =
             View.VISIBLE
     }
 
