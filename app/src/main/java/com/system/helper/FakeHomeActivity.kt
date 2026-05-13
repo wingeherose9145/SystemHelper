@@ -10,7 +10,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 
 class FakeHomeActivity : AppCompatActivity() {
-
+    private val hiddenPassword =
+        "9527"
     private var clickCount = 0
 
     private val handler =
@@ -143,7 +144,7 @@ class FakeHomeActivity : AppCompatActivity() {
                 val password =
                     input.text.toString()
 
-                if (password == "1234") {
+                if (password == hiddenPassword) {
 
                     startActivity(
                         Intent(
