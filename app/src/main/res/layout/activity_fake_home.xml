@@ -22,6 +22,8 @@
             android:textColor="#111111"
             android:paddingBottom="24dp" />
 
+        <!-- Battery Health -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -32,12 +34,12 @@
             android:layout_marginBottom="18dp">
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Battery Health"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#111111"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:textColor="#111111" />
 
             <TextView
                 android:id="@+id/batteryText"
@@ -59,6 +61,8 @@
 
         </LinearLayout>
 
+        <!-- RAM Usage -->
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -69,12 +73,12 @@
             android:layout_marginBottom="18dp">
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="RAM Usage"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#111111"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:textColor="#111111" />
 
             <ProgressBar
                 android:id="@+id/ramBar"
@@ -92,7 +96,10 @@
                 android:textColor="#666666"
                 android:paddingTop="10dp" />
 
-      
+        </LinearLayout>
+
+        <!-- Storage Cleaner -->
+
         <LinearLayout
             android:id="@+id/storageLayout"
             android:layout_width="match_parent"
@@ -100,15 +107,16 @@
             android:orientation="vertical"
             android:background="#FFFFFF"
             android:elevation="3dp"
-            android:padding="20dp">
+            android:padding="20dp"
+            android:layout_marginBottom="18dp">
 
             <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Storage Cleaner"
                 android:textSize="20sp"
                 android:textStyle="bold"
-                android:textColor="#111111"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:textColor="#111111" />
 
             <TextView
                 android:id="@+id/cacheText"
@@ -131,44 +139,47 @@
 
         </LinearLayout>
 
+        <!-- Quick Tools -->
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginBottom="16dp">
+
+            <Button
+                android:id="@+id/batterySaverButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="Battery Saver"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:backgroundTint="#34A853"
+                android:layout_marginEnd="6dp" />
+
+            <Button
+                android:id="@+id/cpuBoostButton"
+                android:layout_width="0dp"
+                android:layout_height="52dp"
+                android:layout_weight="1"
+                android:text="CPU Boost"
+                android:textColor="#FFFFFF"
+                android:textStyle="bold"
+                android:backgroundTint="#FB8C00"
+                android:layout_marginStart="6dp" />
+
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/optimizeButton"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:text="Smart Optimize"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:backgroundTint="#2D7FF9" />
+
     </LinearLayout>
-<LinearLayout
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="horizontal"
-    android:layout_marginTop="18dp">
 
-    <Button
-        android:id="@+id/batterySaverButton"
-        android:layout_width="0dp"
-        android:layout_height="52dp"
-        android:layout_weight="1"
-        android:text="Battery Saver"
-        android:textColor="#FFFFFF"
-        android:textStyle="bold"
-        android:backgroundTint="#34A853"
-        android:layout_marginEnd="6dp" />
-
-    <Button
-        android:id="@+id/cpuBoostButton"
-        android:layout_width="0dp"
-        android:layout_height="52dp"
-        android:layout_weight="1"
-        android:text="CPU Boost"
-        android:textColor="#FFFFFF"
-        android:textStyle="bold"
-        android:backgroundTint="#FB8C00"
-        android:layout_marginStart="6dp" />
-
-</LinearLayout>
-
-<Button
-    android:id="@+id/optimizeButton"
-    android:layout_width="match_parent"
-    android:layout_height="54dp"
-    android:text="Smart Optimize"
-    android:textColor="#FFFFFF"
-    android:textStyle="bold"
-    android:backgroundTint="#2D7FF9"
-    android:layout_marginTop="16dp" />
 </ScrollView>
