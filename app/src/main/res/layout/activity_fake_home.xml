@@ -16,12 +16,21 @@
             android:id="@+id/titleText"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="System Helper"
+            android:text="Device Care"
             android:textSize="32sp"
             android:textStyle="bold"
             android:textColor="#111111"
             android:paddingBottom="24dp" />
 
+       <TextView
+           android:layout_width="wrap_content"
+           android:layout_height="wrap_content"
+           android:text="System Optimization Suite"
+           android:textSize="15sp"
+           android:textColor="#777777"
+           android:paddingTop="4dp"
+           android:paddingBottom="22dp" />
+        
         <!-- Battery Health -->
 
         <LinearLayout
