@@ -15,6 +15,18 @@ class SplashActivity : AppCompatActivity() {
             R.layout.activity_splash
         )
 
+       val root =
+    findViewById<android.view.View>(
+        android.R.id.content
+    )
+
+root.alpha = 0f
+
+root.animate()
+    .alpha(1f)
+    .setDuration(700)
+    .start()
+        
         Handler(
             Looper.getMainLooper()
         ).postDelayed({
