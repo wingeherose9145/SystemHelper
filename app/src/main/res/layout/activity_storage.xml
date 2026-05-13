@@ -4,7 +4,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#F3F4F6">
+    android:background="#F5F6FA">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -16,22 +16,23 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Storage Analysis"
-            android:textSize="28sp"
+            android:textSize="32sp"
             android:textStyle="bold"
             android:textColor="#111111"
-            android:paddingBottom="20dp" />
+            android:paddingBottom="24dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="#FFFFFF"
-            android:padding="18dp"
-            android:layout_marginBottom="14dp">
+            android:elevation="3dp"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp">
 
             <TextView
                 android:text="Images"
-                android:textSize="18sp"
+                android:textSize="19sp"
                 android:textStyle="bold"
                 android:textColor="#111111"
                 android:layout_width="wrap_content"
@@ -42,9 +43,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="3.2 GB"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 android:textColor="#666666"
-                android:paddingTop="6dp" />
+                android:paddingTop="8dp" />
 
         </LinearLayout>
 
@@ -53,12 +54,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="#FFFFFF"
-            android:padding="18dp"
-            android:layout_marginBottom="14dp">
+            android:elevation="3dp"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp">
 
             <TextView
                 android:text="Videos"
-                android:textSize="18sp"
+                android:textSize="19sp"
                 android:textStyle="bold"
                 android:textColor="#111111"
                 android:layout_width="wrap_content"
@@ -69,9 +71,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="12.8 GB"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 android:textColor="#666666"
-                android:paddingTop="6dp" />
+                android:paddingTop="8dp" />
 
         </LinearLayout>
 
@@ -80,12 +82,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="#FFFFFF"
-            android:padding="18dp"
-            android:layout_marginBottom="14dp">
+            android:elevation="3dp"
+            android:padding="20dp"
+            android:layout_marginBottom="16dp">
 
             <TextView
                 android:text="APK Files"
-                android:textSize="18sp"
+                android:textSize="19sp"
                 android:textStyle="bold"
                 android:textColor="#111111"
                 android:layout_width="wrap_content"
@@ -96,9 +99,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="1.4 GB"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 android:textColor="#666666"
-                android:paddingTop="6dp" />
+                android:paddingTop="8dp" />
 
         </LinearLayout>
 
@@ -107,12 +110,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:background="#FFFFFF"
-            android:padding="18dp"
-            android:layout_marginBottom="20dp">
+            android:elevation="3dp"
+            android:padding="20dp"
+            android:layout_marginBottom="22dp">
 
             <TextView
                 android:text="Cache"
-                android:textSize="18sp"
+                android:textSize="19sp"
                 android:textStyle="bold"
                 android:textColor="#111111"
                 android:layout_width="wrap_content"
@@ -123,17 +127,20 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="2.1 GB"
-                android:textSize="16sp"
+                android:textSize="17sp"
                 android:textColor="#666666"
-                android:paddingTop="6dp" />
+                android:paddingTop="8dp" />
 
         </LinearLayout>
 
         <Button
             android:id="@+id/scanButton"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Optimize Storage" />
+            android:layout_height="54dp"
+            android:text="Optimize Storage"
+            android:textColor="#FFFFFF"
+            android:textStyle="bold"
+            android:backgroundTint="#2D7FF9" />
 
     </LinearLayout>
 
