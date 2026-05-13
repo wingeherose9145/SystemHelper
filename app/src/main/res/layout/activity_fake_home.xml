@@ -139,6 +139,59 @@
 
         </LinearLayout>
 
+        <!-- System Status -->
+
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:background="#FFFFFF"
+    android:elevation="3dp"
+    android:padding="20dp"
+    android:layout_marginBottom="18dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="System Status"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#111111" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Version 14.2.1"
+        android:textSize="16sp"
+        android:textColor="#666666"
+        android:paddingTop="10dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Security Module: Active"
+        android:textSize="16sp"
+        android:textColor="#34A853"
+        android:paddingTop="6dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Thermal Status: Stable"
+        android:textSize="16sp"
+        android:textColor="#FB8C00"
+        android:paddingTop="6dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Optimization Engine: Ready"
+        android:textSize="16sp"
+        android:textColor="#2D7FF9"
+        android:paddingTop="6dp" />
+
+</LinearLayout>
+        
         <!-- Quick Tools -->
 
         <LinearLayout
