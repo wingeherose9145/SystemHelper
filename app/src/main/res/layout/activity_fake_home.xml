@@ -92,8 +92,7 @@
                 android:textColor="#666666"
                 android:paddingTop="10dp" />
 
-        </LinearLayout>
-
+      
         <LinearLayout
             android:id="@+id/storageLayout"
             android:layout_width="match_parent"
