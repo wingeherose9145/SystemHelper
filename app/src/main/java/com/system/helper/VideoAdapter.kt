@@ -3,7 +3,6 @@ package com.system.helper
 import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaMetadataRetriever
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -61,9 +60,7 @@ class VideoAdapter(
             )
 
             val bitmap: Bitmap? =
-                retriever.getFrameAtTime(
-                    1000000
-                )
+                retriever.frameAtTime
 
             if (bitmap != null) {
 
