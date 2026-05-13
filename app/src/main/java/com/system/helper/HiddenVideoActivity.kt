@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ListView
 import androidx.activity.result.contract.ActivityResultContracts
@@ -16,11 +17,14 @@ class HiddenVideoActivity : AppCompatActivity() {
 
     private lateinit var videoListView: ListView
 
-    private val videoList =
-        mutableListOf<VideoItem>()
+    private val realVideoPaths =
+        mutableListOf<String>()
+
+    private val displayNames =
+        mutableListOf<String>()
 
     private lateinit var adapter:
-            VideoAdapter
+            ArrayAdapter<String>
 
     private val pickVideoLauncher =
         registerForActivityResult(
@@ -57,9 +61,10 @@ class HiddenVideoActivity : AppCompatActivity() {
             )
 
         adapter =
-            VideoAdapter(
+            ArrayAdapter(
                 this,
-                videoList
+                android.R.layout.simple_list_item_1,
+                displayNames
             )
 
         videoListView.adapter =
@@ -81,6 +86,11 @@ class HiddenVideoActivity : AppCompatActivity() {
                     PlayerActivity::class.java
                 )
 
+            intent.putStringArrayListExtra(
+                "video_list",
+                ArrayList(realVideoPaths)
+            )
+
             intent.putExtra(
                 "video_index",
                 position
@@ -94,7 +104,9 @@ class HiddenVideoActivity : AppCompatActivity() {
 
     private fun loadVideos() {
 
-        videoList.clear()
+        realVideoPaths.clear()
+
+        displayNames.clear()
 
         val hiddenDir =
             File(
@@ -112,7 +124,11 @@ class HiddenVideoActivity : AppCompatActivity() {
 
         files?.forEach { file ->
 
-            val realName =
+            realVideoPaths.add(
+                file.absolutePath
+            )
+
+            val displayName =
                 if (file.name.contains("__")) {
 
                     file.name.substringAfter("__")
@@ -122,12 +138,8 @@ class HiddenVideoActivity : AppCompatActivity() {
                     file.name
                 }
 
-            videoList.add(
-
-                VideoItem(
-                    displayName = realName,
-                    uri = Uri.fromFile(file)
-                )
+            displayNames.add(
+                displayName
             )
         }
 
