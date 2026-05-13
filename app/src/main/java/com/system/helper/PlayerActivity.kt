@@ -11,6 +11,7 @@ import android.widget.LinearLayout
 import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import java.io.File
@@ -162,6 +163,22 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
+        player.addListener(
+            object : Player.Listener {
+
+                override fun onPlaybackStateChanged(
+                    playbackState: Int
+                ) {
+
+                    if (playbackState ==
+                        Player.STATE_ENDED
+                    ) {
+
+                        playNextVideo()
+                    }
+                }
+            })
+
         startSeekBarUpdate()
     }
 
@@ -182,6 +199,26 @@ class PlayerActivity : AppCompatActivity() {
         player.play()
 
         startAutoHide()
+    }
+
+    private fun playNextVideo() {
+
+        if (currentIndex <
+            videoList.size - 1
+        ) {
+
+            currentIndex++
+
+            playVideo()
+
+        } else {
+
+            topControls.visibility =
+                View.VISIBLE
+
+            seekBar.visibility =
+                View.VISIBLE
+        }
     }
 
     private fun startAutoHide() {
