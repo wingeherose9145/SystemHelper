@@ -62,7 +62,24 @@ class HiddenVideoActivity : AppCompatActivity() {
             )
         }
 
-        listView.setOnItemClickListener { _, _, position, _ ->
+        listView.setOnItemLongClickListener { _, _, position, _ ->
+
+    val file =
+        File(videoPaths[position])
+
+    if (file.exists()) {
+
+        file.delete()
+    }
+
+    videoList.removeAt(position)
+
+    videoPaths.removeAt(position)
+
+    adapter.notifyDataSetChanged()
+
+    true
+}
 
             val intent = Intent(
                 this,
