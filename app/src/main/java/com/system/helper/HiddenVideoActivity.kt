@@ -21,12 +21,12 @@ class HiddenVideoActivity : AppCompatActivity() {
 
     private val videoFiles = mutableListOf<File>()
 
-    private val pickVideo =
+    private val pickVideos =
         registerForActivityResult(
-            ActivityResultContracts.GetContent()
-        ) { uri: Uri? ->
+            ActivityResultContracts.OpenMultipleDocuments()
+        ) { uris ->
 
-            uri?.let {
+            uris.forEach {
 
                 importVideo(it)
             }
@@ -56,7 +56,9 @@ class HiddenVideoActivity : AppCompatActivity() {
 
         addButton.setOnClickListener {
 
-            pickVideo.launch("video/*")
+            pickVideos.launch(
+                arrayOf("video/*")
+            )
         }
 
         listView.setOnItemClickListener { _, _, position, _ ->
