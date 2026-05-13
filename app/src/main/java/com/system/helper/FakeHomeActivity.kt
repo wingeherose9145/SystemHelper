@@ -3,24 +3,26 @@ package com.system.helper
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.os.Looper
 import android.text.InputType
 import android.widget.*
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import kotlin.random.Random
 
 class FakeHomeActivity : AppCompatActivity() {
 
     private var clickCount = 0
 
-    private val handler = Handler()
-
-    private val hiddenPassword = "9527"
+    private val handler =
+        Handler(Looper.getMainLooper())
 
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_fake_home)
+        setContentView(
+            R.layout.activity_fake_home
+        )
 
         val titleText =
             findViewById<TextView>(
@@ -47,77 +49,47 @@ class FakeHomeActivity : AppCompatActivity() {
                 R.id.cacheText
             )
 
-        val ramBar =
-            findViewById<ProgressBar>(
-                R.id.ramBar
-            )
-
         val cleanButton =
             findViewById<Button>(
                 R.id.cleanButton
             )
-        val batterySaverButton =
-            findViewById<Button>(
-                R.id.batterySaverButton
-            )
 
-        val cpuBoostButton =
-            findViewById<Button>(
-                R.id.cpuBoostButton
-            )
-
-       val optimizeButton =
-           findViewById<Button>(
-               R.id.optimizeButton
-            )
-            
-        val cacheLayout =
+        val storageLayout =
             findViewById<LinearLayout>(
                 R.id.storageLayout
             )
-            
-        val ramUsed =
-            Random.nextInt(4, 8)
 
-        val ramPercent =
-            Random.nextInt(45, 92)
-
-        val temp =
-            Random.nextInt(30, 41)
-
-        val cache =
-            Random.nextDouble(0.8, 3.2)
-
-        val batteryStates =
-            listOf(
-                "Excellent",
-                "Good",
-                "Normal"
+        val optimizeButton =
+            findViewById<Button>(
+                R.id.optimizeButton
             )
 
         val randomTemp =
-    (31..36).random()
+            (31..36).random()
 
-val randomRam =
-    (48..62).random() / 10.0
+        val randomRam =
+            (48..62).random() / 10.0
 
-val randomCache =
-    (12..24).random() / 10.0
+        val randomCache =
+            (12..24).random() / 10.0
 
-tempText.text =
-    "Temperature: ${randomTemp}°C"
+        batteryText.text =
+            "Excellent"
 
-ramText.text =
-    "${randomRam}GB / 8GB Used"
+        tempText.text =
+            "Temperature: ${randomTemp}°C"
 
-cacheText.text =
-    "Junk Cache: ${randomCache}GB"
-        
+        ramText.text =
+            "${randomRam}GB / 8GB Used"
+
+        cacheText.text =
+            "Junk Cache: ${randomCache}GB"
+
         titleText.setOnClickListener {
 
             clickCount++
 
-            if (clickCount == 3) {
+            if (clickCount >= 3) {
 
                 clickCount = 0
 
@@ -137,29 +109,9 @@ cacheText.text =
 
             simulateCleaning()
         }
-        cacheLayout.setOnClickListener {
 
-            batterySaverButton.setOnClickListener {
+        storageLayout.setOnClickListener {
 
-                fakeOptimize(
-                    "Battery Saver"
-                )
-            }
-
-            cpuBoostButton.setOnClickListener {
-
-                fakeOptimize(
-                   "CPU Boost"
-                )
-            }
-
-            optimizeButton.setOnClickListener {
-
-              fakeOptimize(
-                    "Smart Optimize"
-                )
-            }
-            
             startActivity(
                 Intent(
                     this,
@@ -167,149 +119,31 @@ cacheText.text =
                 )
             )
         }
+
+        optimizeButton.setOnClickListener {
+
+            fakeOptimize()
+        }
     }
-private fun fakeOptimize(title: String) {
-
-    val loadingText =
-        TextView(this)
-
-val progressBar =
-    ProgressBar(this)
-
-progressBar.isIndeterminate = true
-        
-    loadingText.text =
-        "Optimizing..."
-
-    loadingText.setPadding(
-        60,
-        40,
-        60,
-        40
-    )
-
-    val dialog =
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setView(loadingText)
-            .setCancelable(false)
-            .create()
-
-    dialog.show()
-
-    handler.postDelayed({
-
-        loadingText.text =
-            "Analyzing System..."
-
-    }, 1200)
-
-    handler.postDelayed({
-
-        loadingText.text =
-            "Applying Optimization..."
-
-    }, 2400)
-
-    handler.postDelayed({
-
-        dialog.dismiss()
-
-        Toast.makeText(
-            this,
-            "Optimization Complete",
-            Toast.LENGTH_SHORT
-        ).show()
-
-    }, 4000)
-}
-
-
-    private fun simulateCleaning() {
-
-    val loadingText =
-        TextView(this)
-
-    loadingText.text =
-        "Scanning..."
-
-    loadingText.setPadding(
-        60,
-        40,
-        60,
-        40
-    )
-
-    val dialog =
-        AlertDialog.Builder(this)
-            .setTitle("System Cleaner")
-           val layout =
-    LinearLayout(this)
-
-layout.orientation =
-    LinearLayout.VERTICAL
-
-layout.setPadding(
-    60,
-    40,
-    60,
-    40
-)
-
-layout.addView(progressBar)
-layout.addView(loadingText)
-
-.setView(layout)
-            .setCancelable(false)
-            .create()
-
-    dialog.show()
-
-    handler.postDelayed({
-
-        loadingText.text =
-            "Cleaning Cache..."
-
-    }, 1200)
-
-    handler.postDelayed({
-
-        loadingText.text =
-            "Optimizing System..."
-
-    }, 2500)
-
-    handler.postDelayed({
-
-        dialog.dismiss()
-
-        Toast.makeText(
-            this,
-            "System Optimized",
-            Toast.LENGTH_SHORT
-        ).show()
-
-    }, 4000)
-}
 
     private fun showPasswordDialog() {
 
-        val input = EditText(this)
+        val input =
+            EditText(this)
 
         input.inputType =
-            InputType.TYPE_CLASS_NUMBER or
-            InputType.TYPE_NUMBER_VARIATION_PASSWORD
+            InputType.TYPE_CLASS_TEXT or
+                    InputType.TYPE_TEXT_VARIATION_PASSWORD
 
         AlertDialog.Builder(this)
-            .setTitle("Security Verification")
-            .setMessage("Enter Access Code")
+            .setTitle("Enter Password")
             .setView(input)
             .setPositiveButton("Unlock") { _, _ ->
 
                 val password =
                     input.text.toString()
 
-                if (password == hiddenPassword) {
+                if (password == "1234") {
 
                     startActivity(
                         Intent(
@@ -322,15 +156,83 @@ layout.addView(loadingText)
 
                     Toast.makeText(
                         this,
-                        "Invalid Code",
+                        "Wrong Password",
                         Toast.LENGTH_SHORT
                     ).show()
                 }
             }
-            .setNegativeButton(
-                "Cancel",
-                null
-            )
+            .setNegativeButton("Cancel", null)
             .show()
+    }
+
+    private fun simulateCleaning() {
+
+        Toast.makeText(
+            this,
+            "Cleaning completed",
+            Toast.LENGTH_SHORT
+        ).show()
+    }
+
+    private fun fakeOptimize() {
+
+        val loadingText =
+            TextView(this)
+
+        loadingText.text =
+            "Optimizing system resources..."
+
+        loadingText.textSize = 16f
+
+        loadingText.setPadding(
+            0,
+            30,
+            0,
+            0
+        )
+
+        val progressBar =
+            ProgressBar(this)
+
+        progressBar.isIndeterminate = true
+
+        val layout =
+            LinearLayout(this)
+
+        layout.orientation =
+            LinearLayout.VERTICAL
+
+        layout.setPadding(
+            60,
+            40,
+            60,
+            40
+        )
+
+        layout.addView(progressBar)
+        layout.addView(loadingText)
+
+        val dialog =
+            AlertDialog.Builder(this)
+                .setTitle("Smart Optimize")
+                .setView(layout)
+                .setCancelable(false)
+                .create()
+
+        dialog.show()
+
+        Handler(
+            Looper.getMainLooper()
+        ).postDelayed({
+
+            dialog.dismiss()
+
+            Toast.makeText(
+                this,
+                "System optimization completed",
+                Toast.LENGTH_SHORT
+            ).show()
+
+        }, 2500)
     }
 }
