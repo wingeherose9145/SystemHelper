@@ -173,6 +173,11 @@ private fun fakeOptimize(title: String) {
     val loadingText =
         TextView(this)
 
+val progressBar =
+    ProgressBar(this)
+
+progressBar.isIndeterminate = true
+        
     loadingText.text =
         "Optimizing..."
 
@@ -238,7 +243,23 @@ private fun fakeOptimize(title: String) {
     val dialog =
         AlertDialog.Builder(this)
             .setTitle("System Cleaner")
-            .setView(loadingText)
+           val layout =
+    LinearLayout(this)
+
+layout.orientation =
+    LinearLayout.VERTICAL
+
+layout.setPadding(
+    60,
+    40,
+    60,
+    40
+)
+
+layout.addView(progressBar)
+layout.addView(loadingText)
+
+.setView(layout)
             .setCancelable(false)
             .create()
 
