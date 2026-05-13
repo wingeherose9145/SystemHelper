@@ -6,8 +6,7 @@
     android:layout_height="wrap_content"
     android:orientation="horizontal"
     android:padding="12dp"
-    android:background="#FFFFFF"
-    android:layout_marginBottom="10dp">
+    android:background="#FFFFFF">
 
     <ImageView
         android:id="@+id/thumbImage"
@@ -15,30 +14,15 @@
         android:layout_height="70dp"
         android:scaleType="centerCrop" />
 
-    <LinearLayout
-        android:layout_width="0dp"
+    <TextView
+        android:id="@+id/videoName"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:orientation="vertical"
-        android:paddingStart="12dp">
-
-        <TextView
-            android:id="@+id/videoName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:textColor="#111111" />
-
-        <TextView
-            android:id="@+id/videoSub"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Protected Media"
-            android:textSize="13sp"
-            android:textColor="#777777"
-            android:paddingTop="6dp" />
-
-    </LinearLayout>
+        android:text="Video"
+        android:textColor="#111111"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:layout_marginStart="12dp"
+        android:layout_gravity="center_vertical" />
 
 </LinearLayout>
