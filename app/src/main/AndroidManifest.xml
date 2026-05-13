@@ -11,6 +11,11 @@
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
         <activity
+            android:name=".StorageActivity"
+            android:exported="false" /> 
+
+        
+        <activity
             android:name=".PlayerActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false" />
