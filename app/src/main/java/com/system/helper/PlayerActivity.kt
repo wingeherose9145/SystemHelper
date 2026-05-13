@@ -103,6 +103,44 @@ class PlayerActivity : AppCompatActivity() {
                 0
             )
 
+        player.addListener(
+            object : Player.Listener {
+
+                override fun onVideoSizeChanged(
+                    videoSize: androidx.media3.common.VideoSize
+                ) {
+
+                    if (videoSize.height >
+                        videoSize.width
+                    ) {
+
+                        requestedOrientation =
+                            ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+
+                        isPortrait = true
+
+                    } else {
+
+                        requestedOrientation =
+                            ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+
+                        isPortrait = false
+                    }
+                }
+
+                override fun onPlaybackStateChanged(
+                    playbackState: Int
+                ) {
+
+                    if (playbackState ==
+                        Player.STATE_ENDED
+                    ) {
+
+                        playNextVideo()
+                    }
+                }
+            })
+
         playVideo()
 
         topControls.visibility = View.GONE
@@ -168,22 +206,6 @@ class PlayerActivity : AppCompatActivity() {
                 playVideo()
             }
         }
-
-        player.addListener(
-            object : Player.Listener {
-
-                override fun onPlaybackStateChanged(
-                    playbackState: Int
-                ) {
-
-                    if (playbackState ==
-                        Player.STATE_ENDED
-                    ) {
-
-                        playNextVideo()
-                    }
-                }
-            })
 
         startSeekBarUpdate()
     }
