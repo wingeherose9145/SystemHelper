@@ -22,6 +22,10 @@ class PlayerActivity : AppCompatActivity() {
 
     private lateinit var seekBar: SeekBar
 
+    private lateinit var videoList: ArrayList<String>
+
+    private var currentIndex = 0
+
     private val handler =
         Handler(Looper.getMainLooper())
 
@@ -55,30 +59,34 @@ class PlayerActivity : AppCompatActivity() {
                 R.id.rotateButton
             )
 
+        val prevButton =
+            findViewById<ImageButton>(
+                R.id.prevButton
+            )
+
+        val nextButton =
+            findViewById<ImageButton>(
+                R.id.nextButton
+            )
+
         player = ExoPlayer.Builder(this).build()
 
         playerView.player = player
 
         playerView.useController = false
 
-        val videoPath =
-            intent.getStringExtra("videoUri")
+        videoList =
+            intent.getStringArrayListExtra(
+                "videoList"
+            ) ?: arrayListOf()
 
-        if (videoPath != null) {
+        currentIndex =
+            intent.getIntExtra(
+                "currentIndex",
+                0
+            )
 
-            val file = File(videoPath)
-
-            val mediaItem =
-                MediaItem.fromUri(
-                    Uri.fromFile(file)
-                )
-
-            player.setMediaItem(mediaItem)
-
-            player.prepare()
-
-            player.play()
-        }
+        playVideo()
 
         controlLayout.visibility = View.GONE
 
@@ -118,7 +126,48 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
+        prevButton.setOnClickListener {
+
+            if (currentIndex > 0) {
+
+                currentIndex--
+
+                playVideo()
+            }
+        }
+
+        nextButton.setOnClickListener {
+
+            if (currentIndex <
+                videoList.size - 1
+            ) {
+
+                currentIndex++
+
+                playVideo()
+            }
+        }
+
         startSeekBarUpdate()
+    }
+
+    private fun playVideo() {
+
+        val file =
+            File(videoList[currentIndex])
+
+        val mediaItem =
+            MediaItem.fromUri(
+                Uri.fromFile(file)
+            )
+
+        player.setMediaItem(mediaItem)
+
+        player.prepare()
+
+        player.play()
+
+        controlLayout.visibility = View.GONE
     }
 
     private fun startSeekBarUpdate() {
