@@ -16,9 +16,11 @@ class HiddenVideoActivity : AppCompatActivity() {
 
     private lateinit var videoListView: ListView
 
-    private val videoList = mutableListOf<VideoItem>()
+    private val videoList =
+        mutableListOf<VideoItem>()
 
-    private lateinit var adapter: VideoAdapter
+    private lateinit var adapter:
+            VideoAdapter
 
     private val pickVideoLauncher =
         registerForActivityResult(
@@ -32,7 +34,7 @@ class HiddenVideoActivity : AppCompatActivity() {
                     saveVideoToInternalStorage(uri)
                 }
 
-                refreshVideoList()
+                loadVideos()
             }
         }
 
@@ -40,18 +42,28 @@ class HiddenVideoActivity : AppCompatActivity() {
 
         super.onCreate(savedInstanceState)
 
-        setContentView(R.layout.activity_hidden_video)
+        setContentView(
+            R.layout.activity_hidden_video
+        )
 
         val addButton =
-            findViewById<Button>(R.id.addVideoButton)
+            findViewById<Button>(
+                R.id.addVideoButton
+            )
 
         videoListView =
-            findViewById(R.id.videoListView)
+            findViewById(
+                R.id.videoListView
+            )
 
         adapter =
-            VideoAdapter(this, videoList)
+            VideoAdapter(
+                this,
+                videoList
+            )
 
-        videoListView.adapter = adapter
+        videoListView.adapter =
+            adapter
 
         addButton.setOnClickListener {
 
@@ -64,7 +76,10 @@ class HiddenVideoActivity : AppCompatActivity() {
                 _, _, position, _ ->
 
             val intent =
-                Intent(this, PlayerActivity::class.java)
+                Intent(
+                    this,
+                    PlayerActivity::class.java
+                )
 
             intent.putExtra(
                 "video_index",
@@ -74,31 +89,43 @@ class HiddenVideoActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        refreshVideoList()
+        loadVideos()
     }
 
-    private fun refreshVideoList() {
+    private fun loadVideos() {
 
         videoList.clear()
 
-        val filesDir = File(filesDir, "hidden_videos")
+        val hiddenDir =
+            File(
+                filesDir,
+                "hidden_videos"
+            )
 
-        if (!filesDir.exists()) {
-            filesDir.mkdirs()
+        if (!hiddenDir.exists()) {
+
+            hiddenDir.mkdirs()
         }
 
-        val files = filesDir.listFiles()
+        val files =
+            hiddenDir.listFiles()
 
         files?.forEach { file ->
 
-            val originalName =
-                file.nameWithoutExtension
-                    .substringAfter("__", file.name)
+            val realName =
+                if (file.name.contains("__")) {
+
+                    file.name.substringAfter("__")
+
+                } else {
+
+                    file.name
+                }
 
             videoList.add(
+
                 VideoItem(
-                    displayName = originalName,
-                    realFileName = file.absolutePath,
+                    displayName = realName,
                     uri = Uri.fromFile(file)
                 )
             )
@@ -107,7 +134,12 @@ class HiddenVideoActivity : AppCompatActivity() {
         adapter.notifyDataSetChanged()
     }
 
-    private fun saveVideoToInternalStorage(uri: Uri) {
+    private fun saveVideoToInternalStorage(
+        uri: Uri
+    ) {
+
+        var originalName =
+            "video.mp4"
 
         val cursor =
             contentResolver.query(
@@ -118,13 +150,12 @@ class HiddenVideoActivity : AppCompatActivity() {
                 null
             )
 
-        var originalName =
-            "video.mp4"
-
         cursor?.use {
 
             val nameIndex =
-                it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                it.getColumnIndex(
+                    OpenableColumns.DISPLAY_NAME
+                )
 
             if (it.moveToFirst()) {
 
@@ -139,25 +170,35 @@ class HiddenVideoActivity : AppCompatActivity() {
                 .replace("-", "")
                 .take(12)
 
-        val safeName =
+        val finalName =
             "${randomName}__${originalName}"
 
         val hiddenDir =
-            File(filesDir, "hidden_videos")
+            File(
+                filesDir,
+                "hidden_videos"
+            )
 
         if (!hiddenDir.exists()) {
+
             hiddenDir.mkdirs()
         }
 
         val outputFile =
-            File(hiddenDir, safeName)
+            File(
+                hiddenDir,
+                finalName
+            )
 
-        contentResolver.openInputStream(uri)?.use { input ->
+        contentResolver
+            .openInputStream(uri)
+            ?.use { input ->
 
-            FileOutputStream(outputFile).use { output ->
+                FileOutputStream(outputFile)
+                    .use { output ->
 
-                input.copyTo(output)
+                        input.copyTo(output)
+                    }
             }
-        }
     }
 }
