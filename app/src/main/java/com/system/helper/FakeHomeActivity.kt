@@ -95,23 +95,24 @@ class FakeHomeActivity : AppCompatActivity() {
                 "Normal"
             )
 
-        batteryText.text =
-            batteryStates.random()
+        val randomTemp =
+    (31..36).random()
 
-        tempText.text =
-            "Temperature: ${temp}°C"
+val randomRam =
+    (48..62).random() / 10.0
 
-        ramText.text =
-            "${ramUsed}.2GB / 8GB Used"
+val randomCache =
+    (12..24).random() / 10.0
 
-        ramBar.progress =
-            ramPercent
+tempText.text =
+    "Temperature: ${randomTemp}°C"
 
-        cacheText.text =
-            "Junk Cache: ${
-                String.format("%.1f", cache)
-            }GB"
+ramText.text =
+    "${randomRam}GB / 8GB Used"
 
+cacheText.text =
+    "Junk Cache: ${randomCache}GB"
+        
         titleText.setOnClickListener {
 
             clickCount++
