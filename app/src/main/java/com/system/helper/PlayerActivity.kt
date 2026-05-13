@@ -101,12 +101,12 @@ class PlayerActivity : AppCompatActivity() {
 
         videoList =
             intent.getStringArrayListExtra(
-                "videoList"
+                "video_list"
             ) ?: arrayListOf()
 
         currentIndex =
             intent.getIntExtra(
-                "currentIndex",
+                "video_index",
                 0
             )
 
