@@ -133,5 +133,43 @@
         </LinearLayout>
 
     </LinearLayout>
+<LinearLayout
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:layout_marginTop="18dp">
 
+    <Button
+        android:id="@+id/batterySaverButton"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_weight="1"
+        android:text="Battery Saver"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:backgroundTint="#34A853"
+        android:layout_marginEnd="6dp" />
+
+    <Button
+        android:id="@+id/cpuBoostButton"
+        android:layout_width="0dp"
+        android:layout_height="52dp"
+        android:layout_weight="1"
+        android:text="CPU Boost"
+        android:textColor="#FFFFFF"
+        android:textStyle="bold"
+        android:backgroundTint="#FB8C00"
+        android:layout_marginStart="6dp" />
+
+</LinearLayout>
+
+<Button
+    android:id="@+id/optimizeButton"
+    android:layout_width="match_parent"
+    android:layout_height="54dp"
+    android:text="Smart Optimize"
+    android:textColor="#FFFFFF"
+    android:textStyle="bold"
+    android:backgroundTint="#2D7FF9"
+    android:layout_marginTop="16dp" />
 </ScrollView>
