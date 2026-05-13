@@ -16,52 +16,30 @@
     <LinearLayout
         android:id="@+id/controlLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="70dp"
         android:layout_gravity="bottom"
-        android:orientation="vertical"
-        android:padding="12dp"
-        android:background="#66000000">
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:background="#55000000">
 
         <SeekBar
             android:id="@+id/seekBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
-
-        <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:progressTint="#DDFFFFFF"
+            android:thumbTint="#DDFFFFFF" />
 
-            <ImageButton
-                android:id="@+id/prevButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_media_previous"
-                android:background="@android:color/transparent" />
-
-            <ImageButton
-                android:id="@+id/playPauseButton"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
-                android:src="@android:drawable/ic_media_pause"
-                android:background="@android:color/transparent" />
-
-            <ImageButton
-                android:id="@+id/nextButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_media_next"
-                android:background="@android:color/transparent" />
-
-            <ImageButton
-                android:id="@+id/rotateButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_menu_always_landscape_portrait"
-                android:background="@android:color/transparent" />
-
-        </LinearLayout>
+        <ImageButton
+            android:id="@+id/rotateButton"
+            android:layout_width="42dp"
+            android:layout_height="42dp"
+            android:layout_marginStart="12dp"
+            android:src="@android:drawable/ic_menu_always_landscape_portrait"
+            android:background="@android:color/transparent"
+            android:tint="#DDFFFFFF" />
 
     </LinearLayout>
 
