@@ -13,9 +13,12 @@ import android.widget.SeekBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
 
 class PlayerActivity : AppCompatActivity() {
 
@@ -28,6 +31,10 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var videoList: ArrayList<String>
 
     private var currentIndex = 0
+
+    private var tempFile: File? = null
+
+    private val secretKey: Byte = 0x5A
 
     private val handler =
         Handler(Looper.getMainLooper())
@@ -107,7 +114,7 @@ class PlayerActivity : AppCompatActivity() {
             object : Player.Listener {
 
                 override fun onVideoSizeChanged(
-                    videoSize: androidx.media3.common.VideoSize
+                    videoSize: VideoSize
                 ) {
 
                     if (videoSize.height >
@@ -212,12 +219,25 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun playVideo() {
 
-        val file =
+        deleteTempFile()
+
+        val encryptedFile =
             File(videoList[currentIndex])
+
+        tempFile =
+            File(
+                cacheDir,
+                "temp_video.mp4"
+            )
+
+        decryptFile(
+            encryptedFile,
+            tempFile!!
+        )
 
         val mediaItem =
             MediaItem.fromUri(
-                Uri.fromFile(file)
+                Uri.fromFile(tempFile)
             )
 
         player.setMediaItem(mediaItem)
@@ -227,6 +247,55 @@ class PlayerActivity : AppCompatActivity() {
         player.play()
 
         startAutoHide()
+    }
+
+    private fun decryptFile(
+        inputFile: File,
+        outputFile: File
+    ) {
+
+        val inputStream =
+            FileInputStream(inputFile)
+
+        val outputStream =
+            FileOutputStream(outputFile)
+
+        val buffer =
+            ByteArray(4096)
+
+        var length: Int
+
+        while (true) {
+
+            length =
+                inputStream.read(buffer)
+
+            if (length == -1) break
+
+            for (i in 0 until length) {
+
+                buffer[i] =
+                    (buffer[i].toInt()
+                            xor
+                            secretKey.toInt())
+                        .toByte()
+            }
+
+            outputStream.write(
+                buffer,
+                0,
+                length
+            )
+        }
+
+        inputStream.close()
+
+        outputStream.close()
+    }
+
+    private fun deleteTempFile() {
+
+        tempFile?.delete()
     }
 
     private fun playNextVideo() {
@@ -327,6 +396,8 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
+
+        deleteTempFile()
 
         player.release()
     }
