@@ -6,7 +6,6 @@
     <application
         android:allowBackup="true"
         android:label="Device Care"
-        
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
@@ -25,11 +24,11 @@
             </intent-filter>
 
         </activity>
-        
+
         <activity
             android:name=".StorageActivity"
-            android:exported="false" /> 
-        
+            android:exported="false" />
+
         <activity
             android:name=".PlayerActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
@@ -39,11 +38,9 @@
             android:name=".HiddenVideoActivity"
             android:exported="false" />
 
-       <activity
-           android:name=".FakeHomeActivity"
-           android:exported="true" />
-   
-        </activity>
+        <activity
+            android:name=".FakeHomeActivity"
+            android:exported="true" />
 
     </application>
 
