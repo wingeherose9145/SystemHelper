@@ -19,7 +19,7 @@ class HiddenVideoActivity : AppCompatActivity() {
 
     private val videoList = mutableListOf<String>()
 
-    private val videoFiles = mutableListOf<File>()
+    private val videoPaths = mutableListOf<String>()
 
     private val pickVideos =
         registerForActivityResult(
@@ -63,16 +63,19 @@ class HiddenVideoActivity : AppCompatActivity() {
 
         listView.setOnItemClickListener { _, _, position, _ ->
 
-            val file = videoFiles[position]
-
             val intent = Intent(
                 this,
                 PlayerActivity::class.java
             )
 
+            intent.putStringArrayListExtra(
+                "videoList",
+                ArrayList(videoPaths)
+            )
+
             intent.putExtra(
-                "videoUri",
-                file.absolutePath
+                "currentIndex",
+                position
             )
 
             startActivity(intent)
@@ -108,7 +111,7 @@ class HiddenVideoActivity : AppCompatActivity() {
 
         videoList.add(fileName)
 
-        videoFiles.add(outputFile)
+        videoPaths.add(outputFile.absolutePath)
 
         adapter.notifyDataSetChanged()
     }
@@ -121,11 +124,11 @@ class HiddenVideoActivity : AppCompatActivity() {
 
         val files = videoDir.listFiles()
 
-        files?.forEach {
+        files?.sortedBy { it.name }?.forEach {
 
             videoList.add(it.name)
 
-            videoFiles.add(it)
+            videoPaths.add(it.absolutePath)
         }
 
         adapter.notifyDataSetChanged()
