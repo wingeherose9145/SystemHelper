@@ -1,11 +1,11 @@
 package com.system.helper
 
-import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.text.InputType
 import android.widget.*
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import kotlin.random.Random
 
@@ -121,49 +121,54 @@ class FakeHomeActivity : AppCompatActivity() {
 
     private fun simulateCleaning() {
 
-        val progressDialog =
-            ProgressDialog(this)
+    val loadingText =
+        TextView(this)
 
-        progressDialog.setTitle(
-            "System Cleaner"
-        )
+    loadingText.text =
+        "Scanning..."
 
-        progressDialog.setMessage(
-            "Scanning..."
-        )
+    loadingText.setPadding(
+        60,
+        40,
+        60,
+        40
+    )
 
-        progressDialog.setCancelable(false)
+    val dialog =
+        AlertDialog.Builder(this)
+            .setTitle("System Cleaner")
+            .setView(loadingText)
+            .setCancelable(false)
+            .create()
 
-        progressDialog.show()
+    dialog.show()
 
-        handler.postDelayed({
+    handler.postDelayed({
 
-            progressDialog.setMessage(
-                "Cleaning Cache..."
-            )
+        loadingText.text =
+            "Cleaning Cache..."
 
-        }, 1200)
+    }, 1200)
 
-        handler.postDelayed({
+    handler.postDelayed({
 
-            progressDialog.setMessage(
-                "Optimizing System..."
-            )
+        loadingText.text =
+            "Optimizing System..."
 
-        }, 2500)
+    }, 2500)
 
-        handler.postDelayed({
+    handler.postDelayed({
 
-            progressDialog.dismiss()
+        dialog.dismiss()
 
-            Toast.makeText(
-                this,
-                "System Optimized",
-                Toast.LENGTH_SHORT
-            ).show()
+        Toast.makeText(
+            this,
+            "System Optimized",
+            Toast.LENGTH_SHORT
+        ).show()
 
-        }, 4000)
-    }
+    }, 4000)
+}
 
     private fun showPasswordDialog() {
 
