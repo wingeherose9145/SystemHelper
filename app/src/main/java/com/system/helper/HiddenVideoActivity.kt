@@ -4,11 +4,14 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.widget.ArrayAdapter
+import android.widget.ImageButton
 import android.widget.ListView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import java.io.File
+import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.util.UUID
 
@@ -18,18 +21,25 @@ class HiddenVideoActivity : AppCompatActivity() {
 
     private lateinit var adapter: ArrayAdapter<String>
 
-    private val videoList = mutableListOf<String>()
+    private val videoFiles = ArrayList<File>()
 
-    private val videoPaths = mutableListOf<String>()
+    private val videoNames = ArrayList<String>()
 
-    private val pickVideos =
+    private val secretKey: Byte = 0x5A
+
+    private val pickVideo =
         registerForActivityResult(
-            ActivityResultContracts.OpenMultipleDocuments()
+            ActivityResultContracts.GetMultipleContents()
         ) { uris ->
 
-            uris.forEach {
+            if (uris.isNotEmpty()) {
 
-                importVideo(it)
+                for (uri in uris) {
+
+                    importEncryptedVideo(uri)
+                }
+
+                loadVideos()
             }
         }
 
@@ -38,40 +48,48 @@ class HiddenVideoActivity : AppCompatActivity() {
 
         setContentView(R.layout.activity_hidden_video)
 
-        listView = findViewById(R.id.videoList)
+        listView =
+            findViewById(R.id.videoListView)
 
         val addButton =
-            findViewById<FloatingActionButton>(
+            findViewById<ImageButton>(
                 R.id.addButton
             )
 
-        adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_list_item_1,
-            videoList
-        )
+        adapter =
+            ArrayAdapter(
+                this,
+                android.R.layout.simple_list_item_1,
+                videoNames
+            )
 
         listView.adapter = adapter
 
-        loadSavedVideos()
+        loadVideos()
 
         addButton.setOnClickListener {
 
-            pickVideos.launch(
-                arrayOf("video/*")
-            )
+            pickVideo.launch("video/*")
         }
 
         listView.setOnItemClickListener { _, _, position, _ ->
 
-            val intent = Intent(
-                this,
-                PlayerActivity::class.java
-            )
+            val intent =
+                Intent(
+                    this,
+                    PlayerActivity::class.java
+                )
+
+            val paths = ArrayList<String>()
+
+            for (file in videoFiles) {
+
+                paths.add(file.absolutePath)
+            }
 
             intent.putStringArrayListExtra(
                 "videoList",
-                ArrayList(videoPaths)
+                paths
             )
 
             intent.putExtra(
@@ -82,81 +100,122 @@ class HiddenVideoActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        listView.setOnItemLongClickListener { _, _, position, _ ->
+        listView.setOnItemLongClickListener {
+                _, _, position, _ ->
 
-            val file =
-                File(videoPaths[position])
+            AlertDialog.Builder(this)
+                .setTitle("Delete")
+                .setMessage("Delete this video?")
+                .setPositiveButton("Delete") {
+                        _, _ ->
 
-            if (file.exists()) {
+                    videoFiles[position].delete()
 
-                file.delete()
-            }
-
-            videoList.removeAt(position)
-
-            videoPaths.removeAt(position)
-
-            adapter.notifyDataSetChanged()
+                    loadVideos()
+                }
+                .setNegativeButton(
+                    "Cancel",
+                    null
+                )
+                .show()
 
             true
         }
     }
 
-    private fun importVideo(uri: Uri) {
+    private fun importEncryptedVideo(
+        uri: Uri
+    ) {
 
-        val inputStream =
-            contentResolver.openInputStream(uri)
-                ?: return
+        try {
 
-        val hiddenDir =
-            File(filesDir, ".sys")
+            val inputStream =
+                contentResolver
+                    .openInputStream(uri)
+                    ?: return
 
-        if (!hiddenDir.exists()) {
+            val randomName =
+                UUID.randomUUID()
+                    .toString() + ".dat"
 
-            hiddenDir.mkdirs()
+            val outputFile =
+                File(filesDir, randomName)
+
+            val outputStream =
+                FileOutputStream(outputFile)
+
+            val buffer =
+                ByteArray(4096)
+
+            var length: Int
+
+            while (true) {
+
+                length =
+                    inputStream.read(buffer)
+
+                if (length == -1) break
+
+                for (i in 0 until length) {
+
+                    buffer[i] =
+                        (buffer[i].toInt()
+                                xor
+                                secretKey.toInt())
+                            .toByte()
+                }
+
+                outputStream.write(
+                    buffer,
+                    0,
+                    length
+                )
+            }
+
+            inputStream.close()
+
+            outputStream.close()
+
+            Toast.makeText(
+                this,
+                "Imported",
+                Toast.LENGTH_SHORT
+            ).show()
+
+        } catch (e: Exception) {
+
+            Toast.makeText(
+                this,
+                "Import Failed",
+                Toast.LENGTH_SHORT
+            ).show()
         }
-
-        val randomName =
-            UUID.randomUUID()
-                .toString()
-                .replace("-", "")
-                .substring(0, 8)
-                .uppercase()
-
-        val outputFile =
-            File(hiddenDir, randomName)
-
-        val outputStream =
-            FileOutputStream(outputFile)
-
-        inputStream.copyTo(outputStream)
-
-        inputStream.close()
-
-        outputStream.close()
-
-        videoList.add(randomName)
-
-        videoPaths.add(outputFile.absolutePath)
-
-        adapter.notifyDataSetChanged()
     }
 
-    private fun loadSavedVideos() {
+    private fun loadVideos() {
 
-        val hiddenDir =
-            File(filesDir, ".sys")
+        videoFiles.clear()
 
-        if (!hiddenDir.exists()) return
+        videoNames.clear()
 
         val files =
-            hiddenDir.listFiles()
+            filesDir.listFiles()
 
-        files?.sortedBy { it.name }?.forEach {
+        if (files != null) {
 
-            videoList.add(it.name)
+            for (file in files) {
 
-            videoPaths.add(it.absolutePath)
+                if (file.extension == "dat") {
+
+                    videoFiles.add(file)
+
+                    videoNames.add(
+                        "Video ${
+                            videoNames.size + 1
+                        }"
+                    )
+                }
+            }
         }
 
         adapter.notifyDataSetChanged()
