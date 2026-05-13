@@ -1,8 +1,11 @@
 package com.system.helper
 
+import android.app.AlertDialog
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
+import android.text.InputType
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -12,6 +15,8 @@ class FakeHomeActivity : AppCompatActivity() {
     private var clickCount = 0
 
     private val handler = Handler()
+
+    private val hiddenPassword = "9527"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,16 +32,11 @@ class FakeHomeActivity : AppCompatActivity() {
 
             clickCount++
 
-            if (clickCount == 5) {
+            if (clickCount == 3) {
 
                 clickCount = 0
 
-                startActivity(
-                    Intent(
-                        this,
-                        HiddenVideoActivity::class.java
-                    )
-                )
+                showPasswordDialog()
             }
 
             handler.removeCallbacksAndMessages(null)
@@ -53,5 +53,44 @@ class FakeHomeActivity : AppCompatActivity() {
             "System Status Normal",
             Toast.LENGTH_SHORT
         ).show()
+    }
+
+    private fun showPasswordDialog() {
+
+        val input = EditText(this)
+
+        input.inputType =
+            InputType.TYPE_CLASS_NUMBER or
+            InputType.TYPE_NUMBER_VARIATION_PASSWORD
+
+        AlertDialog.Builder(this)
+            .setTitle("Security Verification")
+            .setMessage("Enter Access Code")
+            .setView(input)
+            .setPositiveButton("Unlock") { _, _ ->
+
+                val password =
+                    input.text.toString()
+
+                if (password == hiddenPassword) {
+
+                    startActivity(
+                        Intent(
+                            this,
+                            HiddenVideoActivity::class.java
+                        )
+                    )
+
+                } else {
+
+                    Toast.makeText(
+                        this,
+                        "Invalid Code",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }
