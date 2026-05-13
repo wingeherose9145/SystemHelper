@@ -174,7 +174,8 @@ class PlayerActivity : AppCompatActivity() {
 
         player.pause()
 
-        controlLayout.visibility = View.VISIBLE
+        controlLayout.visibility =
+            View.VISIBLE
     }
 
     override fun onDestroy() {
