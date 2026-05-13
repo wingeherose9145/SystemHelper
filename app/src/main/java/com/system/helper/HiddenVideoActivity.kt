@@ -48,7 +48,7 @@ class HiddenVideoActivity : AppCompatActivity() {
 
         val addButton =
             findViewById<Button>(
-                R.id.addVideoButton
+                R.id.addButton
             )
 
         videoListView =
