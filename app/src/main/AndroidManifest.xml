@@ -5,7 +5,7 @@
 
     <application
         android:allowBackup="true"
-        android:label="System Helper"
+        android:label="Device Care"
         
         android:supportsRtl="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
