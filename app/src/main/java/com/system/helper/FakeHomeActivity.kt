@@ -56,6 +56,21 @@ class FakeHomeActivity : AppCompatActivity() {
             findViewById<Button>(
                 R.id.cleanButton
             )
+        val batterySaverButton =
+            findViewById<Button>(
+                R.id.batterySaverButton
+            )
+
+        val cpuBoostButton =
+            findViewById<Button>(
+                R.id.cpuBoostButton
+            )
+
+       val optimizeButton =
+           findViewById<Button>(
+               R.id.optimizeButton
+            )
+            
         val cacheLayout =
             findViewById<LinearLayout>(
                 R.id.storageLayout
@@ -123,6 +138,27 @@ class FakeHomeActivity : AppCompatActivity() {
         }
         cacheLayout.setOnClickListener {
 
+            batterySaverButton.setOnClickListener {
+
+                fakeOptimize(
+                    "Battery Saver"
+                )
+            }
+
+            cpuBoostButton.setOnClickListener {
+
+                fakeOptimize(
+                   "CPU Boost"
+                )
+            }
+
+            optimizeButton.setOnClickListener {
+
+              fakeOptimize(
+                    "Smart Optimize"
+                )
+            }
+            
             startActivity(
                 Intent(
                     this,
@@ -131,6 +167,57 @@ class FakeHomeActivity : AppCompatActivity() {
             )
         }
     }
+private fun fakeOptimize(title: String) {
+
+    val loadingText =
+        TextView(this)
+
+    loadingText.text =
+        "Optimizing..."
+
+    loadingText.setPadding(
+        60,
+        40,
+        60,
+        40
+    )
+
+    val dialog =
+        AlertDialog.Builder(this)
+            .setTitle(title)
+            .setView(loadingText)
+            .setCancelable(false)
+            .create()
+
+    dialog.show()
+
+    handler.postDelayed({
+
+        loadingText.text =
+            "Analyzing System..."
+
+    }, 1200)
+
+    handler.postDelayed({
+
+        loadingText.text =
+            "Applying Optimization..."
+
+    }, 2400)
+
+    handler.postDelayed({
+
+        dialog.dismiss()
+
+        Toast.makeText(
+            this,
+            "Optimization Complete",
+            Toast.LENGTH_SHORT
+        ).show()
+
+    }, 4000)
+}
+
 
     private fun simulateCleaning() {
 
