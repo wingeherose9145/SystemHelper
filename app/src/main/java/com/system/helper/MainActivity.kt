@@ -46,7 +46,13 @@ class MainActivity : AppCompatActivity() {
         listView.adapter = adapter
 
         addButton.text = "刷新视频列表"
-        addButton.setOnClickListener { loadAllVideos() }
+        addButton.setOnClickListener { 
+            if (hasStoragePermission()) {
+                loadAllVideos()
+            } else {
+                requestPermission()
+            }
+        }
 
         // 点击播放
         listView.setOnItemClickListener { _, _, position, _ ->
@@ -68,7 +74,7 @@ class MainActivity : AppCompatActivity() {
                         videoUris.removeAt(position)
                         displayNames.removeAt(position)
                         adapter.notifyDataSetChanged()
-                        saveVideoList() // 保存修改后的列表
+                        saveVideoList()
                     }
                     .setNegativeButton("取消", null)
                     .show()
@@ -76,27 +82,32 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        checkAndRequestPermissions()
+        // 首次启动时自动加载
+        loadSavedListOrRequestPermission()
     }
 
-    private fun checkAndRequestPermissions() {
+    private fun hasStoragePermission(): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+        }
+    }
+
+    private fun requestPermission() {
         val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
         } else {
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
-
-        if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
-            requestPermission.launch(permissions)
-        } else {
-            loadSavedOrAllVideos()
-        }
+        requestPermission.launch(permissions)
     }
 
-    // 优先加载保存的列表，没有则加载全部
-    private fun loadSavedOrAllVideos() {
+    private fun loadSavedListOrRequestPermission() {
         if (loadSavedVideoList()) {
-            Toast.makeText(this, "已恢复上次列表 (${displayNames.size} 个)", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "已恢复上次列表 (${displayNames.size} 个视频)", Toast.LENGTH_SHORT).show()
+        } else if (!hasStoragePermission()) {
+            requestPermission()
         } else {
             loadAllVideos()
         }
@@ -131,10 +142,13 @@ class MainActivity : AppCompatActivity() {
         adapter.notifyDataSetChanged()
         saveVideoList()
 
-        Toast.makeText(this, "找到 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
+        if (displayNames.isEmpty()) {
+            Toast.makeText(this, "未找到视频文件", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "找到 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
+        }
     }
 
-    // 保存列表到本地
     private fun saveVideoList() {
         val prefs = getSharedPreferences("video_list", MODE_PRIVATE)
         val editor = prefs.edit()
@@ -144,7 +158,6 @@ class MainActivity : AppCompatActivity() {
         editor.apply()
     }
 
-    // 恢复保存的列表
     private fun loadSavedVideoList(): Boolean {
         val prefs = getSharedPreferences("video_list", MODE_PRIVATE)
         val uriJson = prefs.getString("uris", null) ?: return false
