@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- 应用名称（桌面图标下方显示的名称） -->
+    <string name="app_name">SystemHelper</string>
+    
+    <!-- 可选：其他字符串 -->
+    <string name="add_videos">添加视频</string>
+    <string name="refresh_list">刷新列表</string>
+</resources>
