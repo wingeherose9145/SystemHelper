@@ -6,24 +6,26 @@ import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ListView
+import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import java.io.File
-import java.io.FileOutputStream
-import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var listView: ListView
-    private val videoPaths = mutableListOf<String>()
-    private val displayNames = mutableListOf<String>()
+    private val videoUris = mutableListOf<Uri>()           // 保存视频 Uri
+    private val displayNames = mutableListOf<String>()     // 显示文件名
     private lateinit var adapter: ArrayAdapter<String>
 
     private val pickVideos = registerForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
-        uris?.forEach { uri -> saveVideo(uri) }
-        loadVideos()
+        uris?.forEach { uri ->
+            videoUris.add(uri)
+            val name = getFileNameFromUri(uri)
+            displayNames.add(name)
+        }
+        adapter.notifyDataSetChanged()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,44 +44,21 @@ class MainActivity : AppCompatActivity() {
 
         listView.setOnItemClickListener { _, _, position, _ ->
             val intent = Intent(this, PlayerActivity::class.java)
-            intent.putStringArrayListExtra("video_list", ArrayList(videoPaths))
+            intent.putExtra("video_uri", videoUris[position].toString())
             intent.putExtra("current_index", position)
+            intent.putStringArrayListExtra("video_list", ArrayList(videoUris.map { it.toString() }))
             startActivity(intent)
         }
-
-        loadVideos()
     }
 
-    private fun loadVideos() {
-        videoPaths.clear()
-        displayNames.clear()
-
-        val dir = File(filesDir, "videos")
-        if (!dir.exists()) dir.mkdirs()
-
-        dir.listFiles()?.sortedBy { it.name }?.forEach { file ->
-            videoPaths.add(file.absolutePath)
-            val name = if (file.name.contains("__")) {
-                file.name.substringAfter("__")
-            } else file.name
-            displayNames.add(name)
-        }
-        adapter.notifyDataSetChanged()
-    }
-
-    private fun saveVideo(uri: Uri) {
-        val random = UUID.randomUUID().toString().take(12)
-        val originalName = "video.mp4"
-        val finalName = "${random}__${originalName}"
-
-        val dir = File(filesDir, "videos")
-        if (!dir.exists()) dir.mkdirs()
-
-        val outFile = File(dir, finalName)
-        contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(outFile).use { output ->
-                input.copyTo(output)
+    private fun getFileNameFromUri(uri: Uri): String {
+        return contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            val nameIndex = cursor.getColumnIndex(android.provider.OpenableColumns.DISPLAY_NAME)
+            if (cursor.moveToFirst() && nameIndex != -1) {
+                cursor.getString(nameIndex)
+            } else {
+                "未知视频"
             }
-        }
+        } ?: "未知视频"
     }
 }
