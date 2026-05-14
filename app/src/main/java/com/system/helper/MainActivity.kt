@@ -46,7 +46,7 @@ class MainActivity : AppCompatActivity() {
         listView.adapter = adapter
 
         addButton.text = "刷新视频列表"
-        addButton.setOnClickListener { refreshVideoList() }
+        addButton.setOnClickListener { refreshOrLoadVideos() }
 
         // 点击播放
         listView.setOnItemClickListener { _, _, position, _ ->
@@ -76,11 +76,11 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        // 启动时自动恢复或加载
+        // 启动时直接尝试恢复或加载
         loadSavedListOrRefresh()
     }
 
-    private fun refreshVideoList() {
+    private fun refreshOrLoadVideos() {
         if (hasPermission()) {
             loadAllVideos()
         } else {
@@ -92,29 +92,19 @@ class MainActivity : AppCompatActivity() {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
         } else {
-            ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
+            true // Android 12 及以下不强制检查
         }
     }
 
     private fun requestPermission() {
-        val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
-        } else {
-            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
-        }
-        requestPermission.launch(perms)
+        requestPermission.launch(arrayOf(Manifest.permission.READ_MEDIA_VIDEO))
     }
 
     private fun loadSavedListOrRefresh() {
-        if (!loadSavedVideoList()) {
-            // 如果没有保存的列表，则尝试加载
-            if (hasPermission()) {
-                loadAllVideos()
-            } else {
-                requestPermission()
-            }
-        } else {
+        if (loadSavedVideoList()) {
             Toast.makeText(this, "已恢复 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
+        } else {
+            loadAllVideos()   // 直接尝试加载，不强制弹权限
         }
     }
 
@@ -147,7 +137,11 @@ class MainActivity : AppCompatActivity() {
         adapter.notifyDataSetChanged()
         saveVideoList()
 
-        Toast.makeText(this, "找到 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
+        if (displayNames.isEmpty()) {
+            Toast.makeText(this, "未找到视频文件", Toast.LENGTH_SHORT).show()
+        } else {
+            Toast.makeText(this, "找到 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun saveVideoList() {
