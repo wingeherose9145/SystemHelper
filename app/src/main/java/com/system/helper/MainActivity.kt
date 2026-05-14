@@ -4,6 +4,7 @@ import android.app.AlertDialog
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.OpenableColumns
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ListView
@@ -14,26 +15,39 @@ import androidx.appcompat.app.AppCompatActivity
 class MainActivity : AppCompatActivity() {
 
     private lateinit var listView: ListView
+
     private val videoUris = mutableListOf<Uri>()
     private val displayNames = mutableListOf<String>()
+
     private lateinit var adapter: ArrayAdapter<String>
 
     private val pickVideos = registerForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
 
-        uris?.forEach { uri ->
+        if (uris.isNullOrEmpty()) return@registerForActivityResult
 
-            if (!videoUris.contains(uri)) {
+        uris.forEach { uri ->
+
+            try {
+                // 防止重复添加
+                if (videoUris.contains(uri)) return@forEach
+
+                // 持久化权限（防止部分设备无法读取）
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        uri,
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (_: Exception) {
+                    // 某些系统会抛异常，忽略即可
+                }
+
                 videoUris.add(uri)
+                displayNames.add(getFileNameFromUri(uri))
 
-                contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-
-                val name = getFileNameFromUri(uri)
-                displayNames.add(name)
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
         }
 
@@ -46,7 +60,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         listView = findViewById(R.id.videoListView)
-        val addButton = findViewById(R.id.addButton)
+        val addButton = findViewById<Button>(R.id.addButton)
 
         adapter = ArrayAdapter(
             this,
@@ -56,12 +70,13 @@ class MainActivity : AppCompatActivity() {
 
         listView.adapter = adapter
 
+        // 添加视频
         addButton.setOnClickListener {
             pickVideos.launch(arrayOf("video/*"))
         }
 
         // 点击播放
-        listView.setOnItemLongClickListener { _, _, position: Int, _ ->
+        listView.setOnItemClickListener { _, _, position, _ ->
 
             val intent = Intent(this, PlayerActivity::class.java)
 
@@ -83,57 +98,59 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // 长按删除
-listView.setOnItemLongClickListener { parent, view, position: Int, id ->
+        // 长按删除（已修复 Kotlin 类型推断问题）
+        listView.setOnItemLongClickListener { _, _, position: Int, _ ->
 
-    AlertDialog.Builder(this@MainActivity)
-        .setTitle("删除视频")
-        .setMessage("确定从列表中删除该视频？")
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("删除视频")
+                .setMessage("确定删除该视频？")
+                .setPositiveButton("删除") { _, _ ->
 
-        .setPositiveButton("删除") { _, _ ->
+                    if (position >= 0 && position < videoUris.size) {
 
-            videoUris.removeAt(position)
+                        videoUris.removeAt(position)
+                        displayNames.removeAt(position)
 
-            displayNames.removeAt(position)
+                        adapter.notifyDataSetChanged()
 
-            adapter.notifyDataSetChanged()
+                        Toast.makeText(
+                            this@MainActivity,
+                            "已删除",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                }
+                .setNegativeButton("取消", null)
+                .show()
 
-            Toast.makeText(
-                this@MainActivity,
-                "已删除",
-                Toast.LENGTH_SHORT
-            ).show()
+            true
         }
-
-        .setNegativeButton("取消", null)
-
-        .show()
-
-    true
-}
     }
 
     private fun getFileNameFromUri(uri: Uri): String {
 
-        return contentResolver.query(
-            uri,
-            null,
-            null,
-            null,
-            null
-        )?.use { cursor ->
+        return try {
 
-            val nameIndex =
-                cursor.getColumnIndex(
-                    android.provider.OpenableColumns.DISPLAY_NAME
-                )
+            contentResolver.query(
+                uri,
+                null,
+                null,
+                null,
+                null
+            )?.use { cursor ->
 
-            if (cursor.moveToFirst() && nameIndex != -1) {
-                cursor.getString(nameIndex)
-            } else {
-                "未知视频"
-            }
+                val nameIndex =
+                    cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
 
-        } ?: "未知视频"
+                if (cursor.moveToFirst() && nameIndex != -1) {
+                    cursor.getString(nameIndex)
+                } else {
+                    "未知视频"
+                }
+            } ?: "未知视频"
+
+        } catch (e: Exception) {
+            "未知视频"
+        }
     }
 }
