@@ -6,7 +6,6 @@
         android:label="SUPALYS"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
 
-        <!-- 视频列表页面 -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
@@ -16,12 +15,10 @@
             </intent-filter>
         </activity>
 
-        <!-- 播放器页面 -->
         <activity
             android:name=".PlayerActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false" />
-
     </application>
 
 </manifest>
