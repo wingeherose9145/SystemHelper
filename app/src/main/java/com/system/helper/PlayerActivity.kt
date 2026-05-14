@@ -31,7 +31,7 @@ class PlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 强力全屏
+        // 强力全屏 + 隐藏状态栏
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
 
@@ -61,27 +61,21 @@ class PlayerActivity : AppCompatActivity() {
 
         setupGestureDetector()
 
-        // 优化后的自动旋转逻辑（减少闪烁）
+        // 优化后的自动旋转（减少闪烁）
         player.addListener(object : Player.Listener {
             override fun onVideoSizeChanged(videoSize: VideoSize) {
-                val isPortraitVideo = videoSize.height > videoSize.width
-                
-                val targetOrientation = if (isPortraitVideo) {
+                val target = if (videoSize.height > videoSize.width) {
                     ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 } else {
                     ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 }
-
-                // 只有方向真正不同时才切换，减少不必要旋转
-                if (requestedOrientation != targetOrientation) {
-                    requestedOrientation = targetOrientation
+                if (requestedOrientation != target) {
+                    requestedOrientation = target
                 }
             }
 
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == Player.STATE_ENDED) {
-                    playNextVideo()
-                }
+                if (state == Player.STATE_ENDED) playNextVideo()
             }
         })
 
@@ -91,8 +85,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun playCurrentVideo() {
         try {
             val uri = Uri.parse(videoUris[currentIndex])
-            val mediaItem = MediaItem.fromUri(uri)
-            player.setMediaItem(mediaItem)
+            player.setMediaItem(MediaItem.fromUri(uri))
             player.prepare()
             player.play()
         } catch (e: Exception) {
@@ -118,8 +111,7 @@ class PlayerActivity : AppCompatActivity() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
                 if (kotlin.math.abs(velocityX) > 700) {
-                    if (velocityX > 0) playPreviousVideo()
-                    else playNextVideo()
+                    if (velocityX > 0) playPreviousVideo() else playNextVideo()
                     return true
                 }
                 return false
