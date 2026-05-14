@@ -8,6 +8,7 @@ import android.os.Looper
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowManager
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -25,11 +26,23 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var seekBar: SeekBar
     private lateinit var videoList: ArrayList<String>
     private var currentIndex = 0
+
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var gestureDetector: GestureDetector
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // 彻底全屏 + 隐藏状态栏
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_FULLSCREEN,
+            WindowManager.LayoutParams.FLAG_FULLSCREEN
+        )
+        window.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE
+        )
+
         setContentView(R.layout.activity_player)
 
         playerView = findViewById(R.id.playerView)
@@ -48,22 +61,17 @@ class PlayerActivity : AppCompatActivity() {
             return
         }
 
-        // 播放当前视频
         playCurrentVideo()
 
         // 单击屏幕 = 暂停 / 播放
         playerView.setOnClickListener {
-            if (player.isPlaying) {
-                player.pause()
-            } else {
-                player.play()
-            }
+            if (player.isPlaying) player.pause() else player.play()
         }
 
         // 左右滑动切换视频
         setupGestureDetector()
 
-        // 自动横竖屏适配
+        // 自动旋转 + 视频尺寸适配
         player.addListener(object : Player.Listener {
             override fun onVideoSizeChanged(videoSize: VideoSize) {
                 requestedOrientation = if (videoSize.height > videoSize.width) {
@@ -84,29 +92,20 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun playCurrentVideo() {
-    try {
-        val videoUriString = intent.getStringExtra("video_uri")
-        if (videoUriString != null) {
-            val uri = Uri.parse(videoUriString)
-            val mediaItem = MediaItem.fromUri(uri)
-            player.setMediaItem(mediaItem)
-            player.prepare()
-            player.play()
-            return
-        }
-
-        // 兼容列表模式
-        val file = File(videoList[currentIndex])
-        if (file.exists()) {
+        try {
+            val file = File(videoList[currentIndex])
+            if (!file.exists()) {
+                Toast.makeText(this, "视频文件不存在", Toast.LENGTH_SHORT).show()
+                return
+            }
             val mediaItem = MediaItem.fromUri(Uri.fromFile(file))
             player.setMediaItem(mediaItem)
             player.prepare()
             player.play()
+        } catch (e: Exception) {
+            Toast.makeText(this, "播放失败", Toast.LENGTH_SHORT).show()
         }
-    } catch (e: Exception) {
-        Toast.makeText(this, "播放失败: ${e.message}", Toast.LENGTH_SHORT).show()
     }
-}
 
     private fun playNextVideo() {
         if (currentIndex < videoList.size - 1) {
@@ -122,6 +121,7 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    // ==================== 左右滑动切换 ====================
     private fun setupGestureDetector() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(
@@ -130,7 +130,7 @@ class PlayerActivity : AppCompatActivity() {
                 velocityX: Float,
                 velocityY: Float
             ): Boolean {
-                if (kotlin.math.abs(velocityX) > 800) {
+                if (kotlin.math.abs(velocityX) > 700) {          // 滑动速度阈值
                     if (velocityX > 0) {
                         playPreviousVideo()   // 右滑 → 上一个
                     } else {
