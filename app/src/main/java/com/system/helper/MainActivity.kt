@@ -22,7 +22,6 @@ class MainActivity : AppCompatActivity() {
     private val displayNames = mutableListOf<String>()
     private lateinit var adapter: ArrayAdapter<String>
 
-    // 请求权限
     private val requestPermission = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -34,47 +33,58 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
-    setContentView(R.layout.activity_main)
+        super.onCreate(savedInstanceState)
+        setContentView(R.layout.activity_main)
 
-    listView = findViewById(R.id.videoListView)
-    val addButton = findViewById<Button>(R.id.addButton)
+        listView = findViewById(R.id.videoListView)
+        val addButton = findViewById<Button>(R.id.addButton)
 
-    adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, displayNames)
-    listView.adapter = adapter
+        adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, displayNames)
+        listView.adapter = adapter
 
-    addButton.text = "刷新视频列表"
-    addButton.setOnClickListener { loadAllVideos() }
+        addButton.text = "刷新视频列表"
+        addButton.setOnClickListener { loadAllVideos() }
 
-    // 点击播放和长按删除代码保持不变...
-    listView.setOnItemClickListener { _, _, position, _ ->
-        val intent = Intent(this, PlayerActivity::class.java).apply {
-            putExtra("video_uri", videoUris[position].toString())
-            putExtra("current_index", position)
-            putStringArrayListExtra("video_list", ArrayList(videoUris.map { it.toString() }))
+        // 点击播放
+        listView.setOnItemClickListener { _, _, position, _ ->
+            val intent = Intent(this, PlayerActivity::class.java).apply {
+                putExtra("video_uri", videoUris[position].toString())
+                putExtra("current_index", position)
+                putStringArrayListExtra("video_list", ArrayList(videoUris.map { it.toString() }))
+            }
+            startActivity(intent)
         }
-        startActivity(intent)
-    }
 
-    listView.setOnItemLongClickListener { _, _, position, _ ->
-        // 删除逻辑...
-        true
-    }
+        // 长按删除（仅从列表移除）
+        listView.setOnItemLongClickListener { _, _, position, _ ->
+            if (position >= 0 && position < videoUris.size) {
+                AlertDialog.Builder(this)
+                    .setTitle("删除视频")
+                    .setMessage("确定从列表中移除？")
+                    .setPositiveButton("移除") { _, _ ->
+                        videoUris.removeAt(position)
+                        displayNames.removeAt(position)
+                        adapter.notifyDataSetChanged()
+                        Toast.makeText(this, "已移除", Toast.LENGTH_SHORT).show()
+                    }
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
+            true
+        }
 
-    checkAndRequestPermissions()
-}
+        checkAndRequestPermissions()
+    }
 
     private fun checkAndRequestPermissions() {
-        val permissions = mutableListOf<String>()
-        
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) { // Android 13+
-            permissions.add(Manifest.permission.READ_MEDIA_VIDEO)
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
         } else {
-            permissions.add(Manifest.permission.READ_EXTERNAL_STORAGE)
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
 
         if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
-            requestPermission.launch(permissions.toTypedArray())
+            requestPermission.launch(permissions)
         } else {
             loadAllVideos()
         }
@@ -86,18 +96,15 @@ class MainActivity : AppCompatActivity() {
 
         val projection = arrayOf(
             MediaStore.Video.Media._ID,
-            MediaStore.Video.Media.DISPLAY_NAME,
-            MediaStore.Video.Media.DATA
+            MediaStore.Video.Media.DISPLAY_NAME
         )
-
-        val sortOrder = "${MediaStore.Video.Media.DATE_ADDED} DESC"
 
         contentResolver.query(
             MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
             projection,
             null,
             null,
-            sortOrder
+            "${MediaStore.Video.Media.DATE_ADDED} DESC"
         )?.use { cursor ->
             val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
             val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
@@ -106,10 +113,7 @@ class MainActivity : AppCompatActivity() {
                 val id = cursor.getLong(idColumn)
                 val name = cursor.getString(nameColumn) ?: "未知视频"
 
-                val contentUri = Uri.withAppendedPath(
-                    MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
-                    id.toString()
-                )
+                val contentUri = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id.toString())
 
                 videoUris.add(contentUri)
                 displayNames.add(name)
@@ -121,7 +125,7 @@ class MainActivity : AppCompatActivity() {
         if (displayNames.isEmpty()) {
             Toast.makeText(this, "未找到视频文件", Toast.LENGTH_SHORT).show()
         } else {
-            Toast.makeText(this, "加载了 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "找到 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
         }
     }
 }
