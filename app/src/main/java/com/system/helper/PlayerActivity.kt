@@ -46,7 +46,6 @@ class PlayerActivity : AppCompatActivity() {
         playerView.player = player
         playerView.useController = false
 
-        // 获取传递过来的视频列表
         videoUris = intent.getStringArrayListExtra("video_list") ?: arrayListOf()
         currentIndex = intent.getIntExtra("current_index", 0)
 
@@ -56,7 +55,7 @@ class PlayerActivity : AppCompatActivity() {
             return
         }
 
-        // === 方案A：随机打乱列表并随机开始播放 ===
+        // 随机打乱列表并随机开始播放
         shuffleAndRandomStart()
 
         setupGestureDetector()
@@ -72,7 +71,7 @@ class PlayerActivity : AppCompatActivity() {
 
         playCurrentVideo()
 
-        // 点击屏幕：播放/暂停 + 控制进度条显示
+        // 点击屏幕控制播放/暂停 + 进度条显示
         playerView.setOnClickListener {
             if (player.isPlaying) {
                 player.pause()
@@ -84,14 +83,9 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    // 随机打乱列表并随机选择起始位置
     private fun shuffleAndRandomStart() {
         if (videoUris.size <= 1) return
-
-        // 打乱列表
         videoUris.shuffle(Random.Default)
-
-        // 随机选择一个起始位置
         currentIndex = Random.nextInt(videoUris.size)
     }
 
@@ -131,17 +125,13 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun playNextVideo() {
-        if (videoUris.isNotEmpty()) {
-            currentIndex = (currentIndex + 1) % videoUris.size
-            playCurrentVideo()
-        }
+        currentIndex = (currentIndex + 1) % videoUris.size
+        playCurrentVideo()
     }
 
     private fun playPreviousVideo() {
-        if (videoUris.isNotEmpty()) {
-            currentIndex = if (currentIndex > 0) currentIndex - 1 else videoUris.size - 1
-            playCurrentVideo()
-        }
+        currentIndex = if (currentIndex > 0) currentIndex - 1 else videoUris.size - 1
+        playCurrentVideo()
     }
 
     private fun setupGestureDetector() {
