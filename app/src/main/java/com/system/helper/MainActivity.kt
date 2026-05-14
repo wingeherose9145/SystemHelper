@@ -84,29 +84,33 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 长按删除
-        listView.setOnItemLongClickListener { _, _, position, _ ->
+listView.setOnItemLongClickListener { parent, view, position: Int, id ->
 
-            AlertDialog.Builder(this)
-                .setTitle("删除视频")
-                .setMessage("确定从列表中删除该视频？")
-                .setPositiveButton("删除") { _, _ ->
+    AlertDialog.Builder(this@MainActivity)
+        .setTitle("删除视频")
+        .setMessage("确定从列表中删除该视频？")
 
-                    videoUris.removeAt(position)
-                    displayNames.removeAt(position)
+        .setPositiveButton("删除") { _, _ ->
 
-                    adapter.notifyDataSetChanged()
+            videoUris.removeAt(position)
 
-                    Toast.makeText(
-                        this,
-                        "已删除",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-                .setNegativeButton("取消", null)
-                .show()
+            displayNames.removeAt(position)
 
-            true
+            adapter.notifyDataSetChanged()
+
+            Toast.makeText(
+                this@MainActivity,
+                "已删除",
+                Toast.LENGTH_SHORT
+            ).show()
         }
+
+        .setNegativeButton("取消", null)
+
+        .show()
+
+    true
+}
     }
 
     private fun getFileNameFromUri(uri: Uri): String {
