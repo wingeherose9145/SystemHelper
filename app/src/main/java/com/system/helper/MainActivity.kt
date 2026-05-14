@@ -61,7 +61,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // 点击播放
-        listView.setOnItemClickListener { _, _, position, _ ->
+        listView.setOnItemLongClickListener { _, _, position: Int, _ ->
 
             val intent = Intent(this, PlayerActivity::class.java)
 
