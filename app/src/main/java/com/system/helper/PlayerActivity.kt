@@ -66,12 +66,16 @@ class PlayerActivity : AppCompatActivity() {
         // 自动旋转
         player.addListener(object : Player.Listener {
             override fun onVideoSizeChanged(videoSize: VideoSize) {
-                requestedOrientation = if (videoSize.height > videoSize.width) {
-                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-                } else {
-                    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-                }
-            }
+    val newOrientation = if (videoSize.height > videoSize.width) {
+        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+    } else {
+        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+    }
+    
+    if (requestedOrientation != newOrientation) {
+        requestedOrientation = newOrientation
+    }
+}
 
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_ENDED) {
