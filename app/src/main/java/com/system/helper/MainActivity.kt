@@ -1,156 +1,172 @@
 package com.system.helper
 
-import android.app.AlertDialog
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
-import android.provider.OpenableColumns
+import android.provider.MediaStore
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.ListView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var listView: ListView
-
     private val videoUris = mutableListOf<Uri>()
     private val displayNames = mutableListOf<String>()
-
     private lateinit var adapter: ArrayAdapter<String>
 
-    private val pickVideos = registerForActivityResult(
-        ActivityResultContracts.OpenMultipleDocuments()
-    ) { uris ->
-
-        if (uris.isNullOrEmpty()) return@registerForActivityResult
-
-        uris.forEach { uri ->
-
-            try {
-                // 防止重复添加
-                if (videoUris.contains(uri)) return@forEach
-
-                // 持久化权限（防止部分设备无法读取）
-                try {
-                    contentResolver.takePersistableUriPermission(
-                        uri,
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION
-                    )
-                } catch (_: Exception) {
-                    // 某些系统会抛异常，忽略即可
-                }
-
-                videoUris.add(uri)
-                displayNames.add(getFileNameFromUri(uri))
-
-            } catch (e: Exception) {
-                e.printStackTrace()
-            }
+    private val requestPermission = registerForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { permissions ->
+        if (permissions.all { it.value }) {
+            loadAllVideos()
+        } else {
+            Toast.makeText(this, "需要存储权限才能读取视频", Toast.LENGTH_LONG).show()
         }
-
-        adapter.notifyDataSetChanged()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
         setContentView(R.layout.activity_main)
 
         listView = findViewById(R.id.videoListView)
         val addButton = findViewById<Button>(R.id.addButton)
 
-        adapter = ArrayAdapter(
-            this,
-            android.R.layout.simple_list_item_1,
-            displayNames
-        )
-
+        adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, displayNames)
         listView.adapter = adapter
 
-        // 添加视频
-        addButton.setOnClickListener {
-            pickVideos.launch(arrayOf("video/*"))
-        }
+        addButton.text = "刷新视频列表"
+        addButton.setOnClickListener { loadAllVideos() }
 
         // 点击播放
         listView.setOnItemClickListener { _, _, position, _ ->
-
-            val intent = Intent(this, PlayerActivity::class.java)
-
-            intent.putExtra(
-                "video_uri",
-                videoUris[position].toString()
-            )
-
-            intent.putExtra(
-                "current_index",
-                position
-            )
-
-            intent.putStringArrayListExtra(
-                "video_list",
-                ArrayList(videoUris.map { it.toString() })
-            )
-
+            val intent = Intent(this, PlayerActivity::class.java).apply {
+                putExtra("video_uri", videoUris[position].toString())
+                putExtra("current_index", position)
+                putStringArrayListExtra("video_list", ArrayList(videoUris.map { it.toString() }))
+            }
             startActivity(intent)
         }
 
-        // 长按删除（已修复 Kotlin 类型推断问题）
-        listView.setOnItemLongClickListener { _, _, position: Int, _ ->
-
-            AlertDialog.Builder(this@MainActivity)
-                .setTitle("删除视频")
-                .setMessage("确定删除该视频？")
-                .setPositiveButton("删除") { _, _ ->
-
-                    if (position >= 0 && position < videoUris.size) {
-
+        // 长按删除
+        listView.setOnItemLongClickListener { _, _, position, _ ->
+            if (position >= 0 && position < videoUris.size) {
+                AlertDialog.Builder(this)
+                    .setTitle("删除")
+                    .setMessage("从列表中移除？")
+                    .setPositiveButton("移除") { _, _ ->
                         videoUris.removeAt(position)
                         displayNames.removeAt(position)
-
                         adapter.notifyDataSetChanged()
-
-                        Toast.makeText(
-                            this@MainActivity,
-                            "已删除",
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        saveVideoList() // 保存修改后的列表
                     }
-                }
-                .setNegativeButton("取消", null)
-                .show()
-
+                    .setNegativeButton("取消", null)
+                    .show()
+            }
             true
+        }
+
+        checkAndRequestPermissions()
+    }
+
+    private fun checkAndRequestPermissions() {
+        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
+        } else {
+            arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
+        }
+
+        if (permissions.any { ContextCompat.checkSelfPermission(this, it) != PackageManager.PERMISSION_GRANTED }) {
+            requestPermission.launch(permissions)
+        } else {
+            loadSavedOrAllVideos()
         }
     }
 
-    private fun getFileNameFromUri(uri: Uri): String {
+    // 优先加载保存的列表，没有则加载全部
+    private fun loadSavedOrAllVideos() {
+        if (loadSavedVideoList()) {
+            Toast.makeText(this, "已恢复上次列表 (${displayNames.size} 个)", Toast.LENGTH_SHORT).show()
+        } else {
+            loadAllVideos()
+        }
+    }
 
-        return try {
+    private fun loadAllVideos() {
+        videoUris.clear()
+        displayNames.clear()
 
-            contentResolver.query(
-                uri,
-                null,
-                null,
-                null,
-                null
-            )?.use { cursor ->
+        val projection = arrayOf(MediaStore.Video.Media._ID, MediaStore.Video.Media.DISPLAY_NAME)
 
-                val nameIndex =
-                    cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+        contentResolver.query(
+            MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+            projection,
+            null,
+            null,
+            "${MediaStore.Video.Media.DATE_ADDED} DESC"
+        )?.use { cursor ->
+            val idColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media._ID)
+            val nameColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.DISPLAY_NAME)
 
-                if (cursor.moveToFirst() && nameIndex != -1) {
-                    cursor.getString(nameIndex)
-                } else {
-                    "未知视频"
-                }
-            } ?: "未知视频"
+            while (cursor.moveToNext()) {
+                val id = cursor.getLong(idColumn)
+                val name = cursor.getString(nameColumn) ?: "未知视频"
+                val uri = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, id.toString())
 
+                videoUris.add(uri)
+                displayNames.add(name)
+            }
+        }
+
+        adapter.notifyDataSetChanged()
+        saveVideoList()
+
+        Toast.makeText(this, "找到 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
+    }
+
+    // 保存列表到本地
+    private fun saveVideoList() {
+        val prefs = getSharedPreferences("video_list", MODE_PRIVATE)
+        val editor = prefs.edit()
+        val uriStrings = videoUris.map { it.toString() }
+        editor.putString("uris", Gson().toJson(uriStrings))
+        editor.putString("names", Gson().toJson(displayNames))
+        editor.apply()
+    }
+
+    // 恢复保存的列表
+    private fun loadSavedVideoList(): Boolean {
+        val prefs = getSharedPreferences("video_list", MODE_PRIVATE)
+        val uriJson = prefs.getString("uris", null) ?: return false
+        val nameJson = prefs.getString("names", null) ?: return false
+
+        try {
+            val uriType = object : TypeToken<List<String>>() {}.type
+            val nameType = object : TypeToken<List<String>>() {}.type
+
+            val savedUris: List<String> = Gson().fromJson(uriJson, uriType)
+            val savedNames: List<String> = Gson().fromJson(nameJson, nameType)
+
+            videoUris.clear()
+            displayNames.clear()
+
+            savedUris.forEach { videoUris.add(Uri.parse(it)) }
+            displayNames.addAll(savedNames)
+
+            adapter.notifyDataSetChanged()
+            return true
         } catch (e: Exception) {
-            "未知视频"
+            return false
         }
     }
 }
