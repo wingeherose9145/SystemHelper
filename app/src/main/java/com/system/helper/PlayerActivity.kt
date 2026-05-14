@@ -22,7 +22,7 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var player: ExoPlayer
     private lateinit var playerView: PlayerView
     private lateinit var seekBar: SeekBar
-    private lateinit var videoUris: ArrayList<String>   // 保存 Uri 字符串
+    private lateinit var videoUris: ArrayList<String>
     private var currentIndex = 0
 
     private val handler = Handler(Looper.getMainLooper())
@@ -31,7 +31,7 @@ class PlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 全屏 + 隐藏状态栏
+        // 强力全屏 + 隐藏状态栏和导航栏
         window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
         window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
 
@@ -55,27 +55,28 @@ class PlayerActivity : AppCompatActivity() {
 
         playCurrentVideo()
 
-        // 单击暂停/播放
+        // 单击屏幕暂停/播放
         playerView.setOnClickListener {
             if (player.isPlaying) player.pause() else player.play()
         }
 
-        // 左右滑动切换
+        // 左右滑动切换视频
         setupGestureDetector()
 
-        // 自动旋转
+        // 视频尺寸变化时自动旋转（优化闪烁）
         player.addListener(object : Player.Listener {
             override fun onVideoSizeChanged(videoSize: VideoSize) {
-    val newOrientation = if (videoSize.height > videoSize.width) {
-        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-    } else {
-        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-    }
-    
-    if (requestedOrientation != newOrientation) {
-        requestedOrientation = newOrientation
-    }
-}
+                val targetOrientation = if (videoSize.height > videoSize.width) {
+                    ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                } else {
+                    ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                }
+
+                // 只在方向真正需要改变时才设置，减少闪烁
+                if (requestedOrientation != targetOrientation) {
+                    requestedOrientation = targetOrientation
+                }
+            }
 
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_ENDED) {
@@ -95,7 +96,7 @@ class PlayerActivity : AppCompatActivity() {
             player.prepare()
             player.play()
         } catch (e: Exception) {
-            Toast.makeText(this, "播放失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "播放失败", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -113,12 +114,16 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    // 左右滑动切换
     private fun setupGestureDetector() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
             override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
                 if (kotlin.math.abs(velocityX) > 700) {
-                    if (velocityX > 0) playPreviousVideo()
-                    else playNextVideo()
+                    if (velocityX > 0) {
+                        playPreviousVideo()   // 右滑 → 上一个
+                    } else {
+                        playNextVideo()       // 左滑 → 下一个
+                    }
                     return true
                 }
                 return false
