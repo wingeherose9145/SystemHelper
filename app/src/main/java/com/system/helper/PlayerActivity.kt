@@ -7,7 +7,6 @@ import android.os.Handler
 import android.os.Looper
 import android.view.GestureDetector
 import android.view.MotionEvent
-import android.view.View
 import android.view.WindowManager
 import android.widget.SeekBar
 import android.widget.Toast
@@ -17,14 +16,13 @@ import androidx.media3.common.Player
 import androidx.media3.common.VideoSize
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
-import java.io.File
 
 class PlayerActivity : AppCompatActivity() {
 
     private lateinit var player: ExoPlayer
     private lateinit var playerView: PlayerView
     private lateinit var seekBar: SeekBar
-    private lateinit var videoList: ArrayList<String>
+    private lateinit var videoUris: ArrayList<String>   // 保存 Uri 字符串
     private var currentIndex = 0
 
     private val handler = Handler(Looper.getMainLooper())
@@ -33,15 +31,9 @@ class PlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // 彻底全屏 + 隐藏状态栏
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_FULLSCREEN,
-            WindowManager.LayoutParams.FLAG_FULLSCREEN
-        )
-        window.setFlags(
-            WindowManager.LayoutParams.FLAG_SECURE,
-            WindowManager.LayoutParams.FLAG_SECURE
-        )
+        // 全屏 + 隐藏状态栏
+        window.setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN)
+        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
 
         setContentView(R.layout.activity_player)
 
@@ -52,10 +44,10 @@ class PlayerActivity : AppCompatActivity() {
         playerView.player = player
         playerView.useController = false
 
-        videoList = intent.getStringArrayListExtra("video_list") ?: arrayListOf()
+        videoUris = intent.getStringArrayListExtra("video_list") ?: arrayListOf()
         currentIndex = intent.getIntExtra("current_index", 0)
 
-        if (videoList.isEmpty()) {
+        if (videoUris.isEmpty()) {
             Toast.makeText(this, "没有视频可播放", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -63,15 +55,15 @@ class PlayerActivity : AppCompatActivity() {
 
         playCurrentVideo()
 
-        // 单击屏幕 = 暂停 / 播放
+        // 单击暂停/播放
         playerView.setOnClickListener {
             if (player.isPlaying) player.pause() else player.play()
         }
 
-        // 左右滑动切换视频
+        // 左右滑动切换
         setupGestureDetector()
 
-        // 自动旋转 + 视频尺寸适配
+        // 自动旋转
         player.addListener(object : Player.Listener {
             override fun onVideoSizeChanged(videoSize: VideoSize) {
                 requestedOrientation = if (videoSize.height > videoSize.width) {
@@ -93,22 +85,18 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun playCurrentVideo() {
         try {
-            val file = File(videoList[currentIndex])
-            if (!file.exists()) {
-                Toast.makeText(this, "视频文件不存在", Toast.LENGTH_SHORT).show()
-                return
-            }
-            val mediaItem = MediaItem.fromUri(Uri.fromFile(file))
+            val uri = Uri.parse(videoUris[currentIndex])
+            val mediaItem = MediaItem.fromUri(uri)
             player.setMediaItem(mediaItem)
             player.prepare()
             player.play()
         } catch (e: Exception) {
-            Toast.makeText(this, "播放失败", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "播放失败: ${e.message}", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun playNextVideo() {
-        if (currentIndex < videoList.size - 1) {
+        if (currentIndex < videoUris.size - 1) {
             currentIndex++
             playCurrentVideo()
         }
@@ -121,21 +109,12 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    // ==================== 左右滑动切换 ====================
     private fun setupGestureDetector() {
         gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
-            override fun onFling(
-                e1: MotionEvent?,
-                e2: MotionEvent,
-                velocityX: Float,
-                velocityY: Float
-            ): Boolean {
-                if (kotlin.math.abs(velocityX) > 700) {          // 滑动速度阈值
-                    if (velocityX > 0) {
-                        playPreviousVideo()   // 右滑 → 上一个
-                    } else {
-                        playNextVideo()       // 左滑 → 下一个
-                    }
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                if (kotlin.math.abs(velocityX) > 700) {
+                    if (velocityX > 0) playPreviousVideo()
+                    else playNextVideo()
                     return true
                 }
                 return false
