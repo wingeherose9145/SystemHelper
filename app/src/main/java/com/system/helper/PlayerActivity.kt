@@ -22,8 +22,10 @@ import java.io.File
 class PlayerActivity : AppCompatActivity() {
 
     private lateinit var player: ExoPlayer
+    private lateinit var playerView: PlayerView
     private lateinit var seekBar: SeekBar
     private lateinit var topControls: LinearLayout
+
     private lateinit var videoList: ArrayList<String>
     private var currentIndex = 0
 
@@ -39,122 +41,130 @@ class PlayerActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
+        try {
+            window.setFlags(WindowManager.LayoutParams.FLAG_SECURE, WindowManager.LayoutParams.FLAG_SECURE)
 
-        window.decorView.systemUiVisibility = 
-            View.SYSTEM_UI_FLAG_FULLSCREEN or
-            View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
-            View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or
+                    View.SYSTEM_UI_FLAG_HIDE_NAVIGATION or
+                    View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
 
-        supportActionBar?.hide()
-        setContentView(R.layout.activity_player)
+            supportActionBar?.hide()
+            setContentView(R.layout.activity_player)
 
-        val playerView = findViewById<PlayerView>(R.id.playerView)
-        topControls = findViewById(R.id.topControls)
-        seekBar = findViewById(R.id.seekBar)
+            // 关键：安全获取控件
+            playerView = findViewById(R.id.playerView)
+            topControls = findViewById(R.id.topControls)
+            seekBar = findViewById(R.id.seekBar)
 
-        val rotateButton = findViewById<ImageButton>(R.id.rotateButton)
-        val prevButton = findViewById<ImageButton>(R.id.prevButton)
-        val nextButton = findViewById<ImageButton>(R.id.nextButton)
+            val rotateButton = findViewById<ImageButton>(R.id.rotateButton)
+            val prevButton = findViewById<ImageButton>(R.id.prevButton)
+            val nextButton = findViewById<ImageButton>(R.id.nextButton)
 
-        player = ExoPlayer.Builder(this).build()
-        playerView.player = player
-        playerView.useController = false
+            player = ExoPlayer.Builder(this).build()
+            playerView.player = player
+            playerView.useController = false
 
-        // 关键修复：参数名必须一致
-        videoList = intent.getStringArrayListExtra("video_list") ?: arrayListOf()
-        currentIndex = intent.getIntExtra("video_index", 0)
+            videoList = intent.getStringArrayListExtra("video_list") ?: arrayListOf()
+            currentIndex = intent.getIntExtra("video_index", 0)
 
-        if (videoList.isEmpty() || currentIndex >= videoList.size) {
-            Toast.makeText(this, "视频列表为空或索引错误", Toast.LENGTH_LONG).show()
-            finish()
-            return
-        }
+            if (videoList.isEmpty() || currentIndex >= videoList.size) {
+                Toast.makeText(this, "视频列表为空或索引错误", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
 
-        player.addListener(object : Player.Listener {
-            override fun onVideoSizeChanged(videoSize: VideoSize) {
-                requestedOrientation = if (videoSize.height > videoSize.width) {
-                    isPortrait = true
+            player.addListener(object : Player.Listener {
+                override fun onVideoSizeChanged(videoSize: VideoSize) {
+                    requestedOrientation = if (videoSize.height > videoSize.width) {
+                        isPortrait = true
+                        ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+                    } else {
+                        isPortrait = false
+                        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+                    }
+                }
+
+                override fun onPlaybackStateChanged(playbackState: Int) {
+                    if (playbackState == Player.STATE_ENDED) {
+                        playNextVideo()
+                    }
+                }
+            })
+
+            playVideo()
+
+            topControls.visibility = View.GONE
+            seekBar.visibility = View.GONE
+
+            playerView.setOnClickListener {
+                if (player.isPlaying) {
+                    player.pause()
+                    topControls.visibility = View.VISIBLE
+                    seekBar.visibility = View.VISIBLE
+                } else {
+                    player.play()
+                    startAutoHide()
+                }
+            }
+
+            rotateButton.setOnClickListener {
+                isPortrait = !isPortrait
+                requestedOrientation = if (isPortrait) {
                     ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
                 } else {
-                    isPortrait = false
                     ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
                 }
             }
 
-            override fun onPlaybackStateChanged(playbackState: Int) {
-                if (playbackState == Player.STATE_ENDED) {
-                    playNextVideo()
+            prevButton.setOnClickListener {
+                if (currentIndex > 0) {
+                    currentIndex--
+                    playVideo()
                 }
             }
-        })
 
-        playVideo()
-
-        topControls.visibility = View.GONE
-        seekBar.visibility = View.GONE
-
-        playerView.setOnClickListener {
-            if (player.isPlaying) {
-                player.pause()
-                topControls.visibility = View.VISIBLE
-                seekBar.visibility = View.VISIBLE
-            } else {
-                player.play()
-                startAutoHide()
+            nextButton.setOnClickListener {
+                if (currentIndex < videoList.size - 1) {
+                    currentIndex++
+                    playVideo()
+                }
             }
-        }
 
-        rotateButton.setOnClickListener {
-            isPortrait = !isPortrait
-            requestedOrientation = if (isPortrait) {
-                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            } else {
-                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            }
-        }
+            startSeekBarUpdate()
 
-        prevButton.setOnClickListener {
-            if (currentIndex > 0) {
-                currentIndex--
-                playVideo()
-            }
+        } catch (e: Exception) {
+            Toast.makeText(this, "播放器初始化失败: ${e.message}", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
+            finish()
         }
-
-        nextButton.setOnClickListener {
-            if (currentIndex < videoList.size - 1) {
-                currentIndex++
-                playVideo()
-            }
-        }
-
-        startSeekBarUpdate()
     }
 
     private fun playVideo() {
-        val videoFile = File(videoList[currentIndex])
-        if (!videoFile.exists() || videoFile.length() == 0L) {
-            Toast.makeText(this, "视频文件不存在", Toast.LENGTH_LONG).show()
+        try {
+            val videoFile = File(videoList[currentIndex])
+            if (!videoFile.exists() || videoFile.length() == 0L) {
+                Toast.makeText(this, "视频文件不存在", Toast.LENGTH_LONG).show()
+                finish()
+                return
+            }
+
+            val mediaItem = MediaItem.fromUri(Uri.fromFile(videoFile))
+            player.setMediaItem(mediaItem)
+            player.prepare()
+            player.play()
+
+            startAutoHide()
+        } catch (e: Exception) {
+            Toast.makeText(this, "播放失败: ${e.message}", Toast.LENGTH_LONG).show()
+            e.printStackTrace()
             finish()
-            return
         }
-
-        // 直接播放（当前未加密，跳过解密）
-        val mediaItem = MediaItem.fromUri(Uri.fromFile(videoFile))
-        player.setMediaItem(mediaItem)
-        player.prepare()
-        player.play()
-
-        startAutoHide()
     }
 
     private fun playNextVideo() {
         if (currentIndex < videoList.size - 1) {
             currentIndex++
             playVideo()
-        } else {
-            topControls.visibility = View.VISIBLE
-            seekBar.visibility = View.VISIBLE
         }
     }
 
@@ -187,13 +197,11 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        player.pause()
-        topControls.visibility = View.VISIBLE
-        seekBar.visibility = View.VISIBLE
+        if (::player.isInitialized) player.pause()
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        player.release()
+        if (::player.isInitialized) player.release()
     }
 }
