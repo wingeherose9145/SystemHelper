@@ -84,17 +84,29 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun playCurrentVideo() {
-        val file = File(videoList[currentIndex])
-        if (!file.exists()) {
-            Toast.makeText(this, "视频文件不存在", Toast.LENGTH_SHORT).show()
+    try {
+        val videoUriString = intent.getStringExtra("video_uri")
+        if (videoUriString != null) {
+            val uri = Uri.parse(videoUriString)
+            val mediaItem = MediaItem.fromUri(uri)
+            player.setMediaItem(mediaItem)
+            player.prepare()
+            player.play()
             return
         }
 
-        val mediaItem = MediaItem.fromUri(Uri.fromFile(file))
-        player.setMediaItem(mediaItem)
-        player.prepare()
-        player.play()
+        // 兼容列表模式
+        val file = File(videoList[currentIndex])
+        if (file.exists()) {
+            val mediaItem = MediaItem.fromUri(Uri.fromFile(file))
+            player.setMediaItem(mediaItem)
+            player.prepare()
+            player.play()
+        }
+    } catch (e: Exception) {
+        Toast.makeText(this, "播放失败: ${e.message}", Toast.LENGTH_SHORT).show()
     }
+}
 
     private fun playNextVideo() {
         if (currentIndex < videoList.size - 1) {
