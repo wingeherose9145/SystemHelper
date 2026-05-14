@@ -12,6 +12,7 @@ import android.widget.Button
 import android.widget.ListView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
-        // 长按删除（仅从列表移除）
+        // 长按删除
         listView.setOnItemLongClickListener { _, _, position, _ ->
             if (position >= 0 && position < videoUris.size) {
                 AlertDialog.Builder(this)
