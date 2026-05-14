@@ -34,38 +34,35 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+    super.onCreate(savedInstanceState)
+    setContentView(R.layout.activity_main)
 
-        listView = findViewById(R.id.videoListView)
-        val addButton = findViewById<Button>(R.id.addButton)
+    listView = findViewById(R.id.videoListView)
+    val addButton = findViewById<Button>(R.id.addButton)
 
-        adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, displayNames)
-        listView.adapter = adapter
+    adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, displayNames)
+    listView.adapter = adapter
 
-        // 隐藏或修改“添加”按钮（可选完全移除）
-        addButton.text = "刷新列表"
-        addButton.setOnClickListener { loadAllVideos() }
+    addButton.text = "刷新视频列表"
+    addButton.setOnClickListener { loadAllVideos() }
 
-        // 点击播放
-        listView.setOnItemClickListener { _, _, position, _ ->
-            val intent = Intent(this, PlayerActivity::class.java).apply {
-                putExtra("video_uri", videoUris[position].toString())
-                putExtra("current_index", position)
-                putStringArrayListExtra("video_list", ArrayList(videoUris.map { it.toString() }))
-            }
-            startActivity(intent)
+    // 点击播放和长按删除代码保持不变...
+    listView.setOnItemClickListener { _, _, position, _ ->
+        val intent = Intent(this, PlayerActivity::class.java).apply {
+            putExtra("video_uri", videoUris[position].toString())
+            putExtra("current_index", position)
+            putStringArrayListExtra("video_list", ArrayList(videoUris.map { it.toString() }))
         }
-
-        // 长按删除（从列表中移除，非删除文件）
-        listView.setOnItemLongClickListener { _, _, position, _ ->
-            // ... 原有删除逻辑不变
-            true
-        }
-
-        // 启动时自动加载
-        checkAndRequestPermissions()
+        startActivity(intent)
     }
+
+    listView.setOnItemLongClickListener { _, _, position, _ ->
+        // 删除逻辑...
+        true
+    }
+
+    checkAndRequestPermissions()
+}
 
     private fun checkAndRequestPermissions() {
         val permissions = mutableListOf<String>()
