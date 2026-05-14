@@ -15,17 +15,15 @@ import java.util.UUID
 
 class HiddenVideoActivity : AppCompatActivity() {
 
-    private lateinit var videoListView: ListView
-    private val realVideoPaths = mutableListOf<String>()   // 真实路径，用于播放
-    private val displayNames = mutableListOf<String>()     // 显示给用户的原始文件名
+    private lateinit var listView: ListView
+    private val videoPaths = mutableListOf<String>()      // 真实播放路径
+    private val displayNames = mutableListOf<String>()    // 显示的原始文件名
     private lateinit var adapter: ArrayAdapter<String>
 
-    private val pickVideoLauncher = registerForActivityResult(
+    private val pickVideos = registerForActivityResult(
         ActivityResultContracts.OpenMultipleDocuments()
     ) { uris ->
-        uris?.forEach { uri ->
-            saveVideoToInternalStorage(uri)
-        }
+        uris?.forEach { saveVideo(it) }
         loadVideos()
     }
 
@@ -33,19 +31,20 @@ class HiddenVideoActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_hidden_video)
 
+        // 适配你当前的 XML id
+        listView = findViewById(R.id.videoListView)
         val addButton = findViewById<Button>(R.id.addButton)
-        videoListView = findViewById(R.id.videoList)
 
         adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, displayNames)
-        videoListView.adapter = adapter
+        listView.adapter = adapter
 
         addButton.setOnClickListener {
-            pickVideoLauncher.launch(arrayOf("video/*"))
+            pickVideos.launch(arrayOf("video/*"))
         }
 
-        videoListView.setOnItemClickListener { _, _, position, _ ->
+        listView.setOnItemClickListener { _, _, position, _ ->
             val intent = Intent(this, PlayerActivity::class.java)
-            intent.putStringArrayListExtra("video_list", ArrayList(realVideoPaths))
+            intent.putStringArrayListExtra("video_list", ArrayList(videoPaths))
             intent.putExtra("video_index", position)
             startActivity(intent)
         }
@@ -54,44 +53,42 @@ class HiddenVideoActivity : AppCompatActivity() {
     }
 
     private fun loadVideos() {
-        realVideoPaths.clear()
+        videoPaths.clear()
         displayNames.clear()
 
-        val hiddenDir = File(filesDir, "hidden_videos")
-        if (!hiddenDir.exists()) hiddenDir.mkdirs()
+        val dir = File(filesDir, "hidden_videos")
+        if (!dir.exists()) dir.mkdirs()
 
-        hiddenDir.listFiles()?.sortedBy { it.name }?.forEach { file ->
-            realVideoPaths.add(file.absolutePath)
-
-            val displayName = if (file.name.contains("__")) {
+        dir.listFiles()?.sortedBy { it.name }?.forEach { file ->
+            videoPaths.add(file.absolutePath)
+            val name = if (file.name.contains("__")) {
                 file.name.substringAfter("__")
             } else {
                 file.name
             }
-            displayNames.add(displayName)
+            displayNames.add(name)
         }
         adapter.notifyDataSetChanged()
     }
 
-    private fun saveVideoToInternalStorage(uri: Uri) {
+    private fun saveVideo(uri: Uri) {
         var originalName = "video.mp4"
         contentResolver.query(uri, null, null, null, null)?.use { cursor ->
-            val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (cursor.moveToFirst() && nameIndex != -1) {
-                originalName = cursor.getString(nameIndex)
+            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            if (cursor.moveToFirst() && idx >= 0) {
+                originalName = cursor.getString(idx)
             }
         }
 
-        val randomName = UUID.randomUUID().toString().replace("-", "").take(12)
-        val finalName = "${randomName}__${originalName}"
+        val random = UUID.randomUUID().toString().replace("-", "").take(12)
+        val finalName = "${random}__${originalName}"
 
-        val hiddenDir = File(filesDir, "hidden_videos")
-        if (!hiddenDir.exists()) hiddenDir.mkdirs()
+        val dir = File(filesDir, "hidden_videos")
+        if (!dir.exists()) dir.mkdirs()
 
-        val outputFile = File(hiddenDir, finalName)
-
+        val outFile = File(dir, finalName)
         contentResolver.openInputStream(uri)?.use { input ->
-            FileOutputStream(outputFile).use { output ->
+            FileOutputStream(outFile).use { output ->
                 input.copyTo(output)
             }
         }
