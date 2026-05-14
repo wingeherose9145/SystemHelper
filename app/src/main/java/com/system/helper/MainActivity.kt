@@ -31,7 +31,7 @@ class MainActivity : AppCompatActivity() {
         if (permissions.all { it.value }) {
             loadAllVideos()
         } else {
-            Toast.makeText(this, "需要存储权限才能读取视频", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, "权限被拒绝，无法读取视频", Toast.LENGTH_LONG).show()
         }
     }
 
@@ -46,13 +46,7 @@ class MainActivity : AppCompatActivity() {
         listView.adapter = adapter
 
         addButton.text = "刷新视频列表"
-        addButton.setOnClickListener { 
-            if (hasStoragePermission()) {
-                loadAllVideos()
-            } else {
-                requestPermission()
-            }
-        }
+        addButton.setOnClickListener { refreshVideoList() }
 
         // 点击播放
         listView.setOnItemClickListener { _, _, position, _ ->
@@ -82,11 +76,19 @@ class MainActivity : AppCompatActivity() {
             true
         }
 
-        // 首次启动时自动加载
-        loadSavedListOrRequestPermission()
+        // 启动时自动恢复或加载
+        loadSavedListOrRefresh()
     }
 
-    private fun hasStoragePermission(): Boolean {
+    private fun refreshVideoList() {
+        if (hasPermission()) {
+            loadAllVideos()
+        } else {
+            requestPermission()
+        }
+    }
+
+    private fun hasPermission(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             ContextCompat.checkSelfPermission(this, Manifest.permission.READ_MEDIA_VIDEO) == PackageManager.PERMISSION_GRANTED
         } else {
@@ -95,21 +97,24 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun requestPermission() {
-        val permissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        val perms = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             arrayOf(Manifest.permission.READ_MEDIA_VIDEO)
         } else {
             arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
-        requestPermission.launch(permissions)
+        requestPermission.launch(perms)
     }
 
-    private fun loadSavedListOrRequestPermission() {
-        if (loadSavedVideoList()) {
-            Toast.makeText(this, "已恢复上次列表 (${displayNames.size} 个视频)", Toast.LENGTH_SHORT).show()
-        } else if (!hasStoragePermission()) {
-            requestPermission()
+    private fun loadSavedListOrRefresh() {
+        if (!loadSavedVideoList()) {
+            // 如果没有保存的列表，则尝试加载
+            if (hasPermission()) {
+                loadAllVideos()
+            } else {
+                requestPermission()
+            }
         } else {
-            loadAllVideos()
+            Toast.makeText(this, "已恢复 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -142,18 +147,13 @@ class MainActivity : AppCompatActivity() {
         adapter.notifyDataSetChanged()
         saveVideoList()
 
-        if (displayNames.isEmpty()) {
-            Toast.makeText(this, "未找到视频文件", Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "找到 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
-        }
+        Toast.makeText(this, "找到 ${displayNames.size} 个视频", Toast.LENGTH_SHORT).show()
     }
 
     private fun saveVideoList() {
         val prefs = getSharedPreferences("video_list", MODE_PRIVATE)
         val editor = prefs.edit()
-        val uriStrings = videoUris.map { it.toString() }
-        editor.putString("uris", Gson().toJson(uriStrings))
+        editor.putString("uris", Gson().toJson(videoUris.map { it.toString() }))
         editor.putString("names", Gson().toJson(displayNames))
         editor.apply()
     }
@@ -164,17 +164,13 @@ class MainActivity : AppCompatActivity() {
         val nameJson = prefs.getString("names", null) ?: return false
 
         try {
-            val uriType = object : TypeToken<List<String>>() {}.type
-            val nameType = object : TypeToken<List<String>>() {}.type
-
-            val savedUris: List<String> = Gson().fromJson(uriJson, uriType)
-            val savedNames: List<String> = Gson().fromJson(nameJson, nameType)
+            val uriList: List<String> = Gson().fromJson(uriJson, object : TypeToken<List<String>>() {}.type)
+            val nameList: List<String> = Gson().fromJson(nameJson, object : TypeToken<List<String>>() {}.type)
 
             videoUris.clear()
             displayNames.clear()
-
-            savedUris.forEach { videoUris.add(Uri.parse(it)) }
-            displayNames.addAll(savedNames)
+            uriList.forEach { videoUris.add(Uri.parse(it)) }
+            displayNames.addAll(nameList)
 
             adapter.notifyDataSetChanged()
             return true
