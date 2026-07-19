@@ -73,6 +73,7 @@ class PlayerActivity : AppCompatActivity() {
         player?.release()
         player = ExoPlayer.Builder(this).build().apply {
             playerView.player = this
+            playerView.useController = false     // ← 关键修复1
             addListener(playerListener)
         }
     }
@@ -166,7 +167,6 @@ class PlayerActivity : AppCompatActivity() {
                 return false
             }
 
-            // 双击屏幕刷新当前视频（解决黑屏）
             override fun onDoubleTap(e: MotionEvent): Boolean {
                 Toast.makeText(this@PlayerActivity, "刷新当前视频...", Toast.LENGTH_SHORT).show()
                 playCurrentVideo()
@@ -177,6 +177,11 @@ class PlayerActivity : AppCompatActivity() {
         playerView.setOnTouchListener { _, event ->
             gestureDetector.onTouchEvent(event)
             false
+        }
+
+        // 点击屏幕控制播放/暂停
+        playerView.setOnClickListener {
+            togglePlaybackAndControls()
         }
     }
 
@@ -201,6 +206,18 @@ class PlayerActivity : AppCompatActivity() {
         showControls()
         hideControlsHandler.removeCallbacksAndMessages(null)
         hideControlsHandler.postDelayed({ if (player?.isPlaying == true) hideControls() }, 2500)
+    }
+
+    private fun togglePlaybackAndControls() {
+        player?.let {
+            if (it.isPlaying) {
+                it.pause()
+                showControls()
+            } else {
+                it.play()
+                hideControls()
+            }
+        }
     }
 
     private fun setupSeekBar() {
@@ -231,19 +248,6 @@ class PlayerActivity : AppCompatActivity() {
                 val newPosition = (it.currentPosition - 5000).coerceAtLeast(0)
                 it.seekTo(newPosition)
                 showControlsTemporarily()
-            }
-        }
-    }
-
-    // 点击屏幕：播放/暂停 + 显示控件
-    private fun togglePlaybackAndControls() {
-        player?.let {
-            if (it.isPlaying) {
-                it.pause()
-                showControls()
-            } else {
-                it.play()
-                hideControls()
             }
         }
     }
