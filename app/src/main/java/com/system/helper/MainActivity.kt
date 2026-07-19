@@ -58,12 +58,14 @@ class MainActivity : AppCompatActivity() {
             pickVideos.launch(arrayOf("video/*"))
         }
 
+        // 单击播放，长按删除
         listView.setOnItemClickListener { _, _, position, _ ->
             playVideo(position)
         }
 
-        if (videoUris.isNotEmpty()) {
-            playVideo(videoUris.indices.random())
+        listView.setOnItemLongClickListener { _, _, position, _ ->
+            deleteVideo(position)
+            true
         }
     }
 
@@ -73,6 +75,24 @@ class MainActivity : AppCompatActivity() {
         intent.putStringArrayListExtra("video_list", listStrings)
         intent.putExtra("current_index", startIndex)
         startActivity(intent)
+    }
+
+    private fun deleteVideo(position: Int) {
+        if (position < 0 || position >= videoUris.size) return
+
+        val uri = videoUris[position]
+        val name = displayNames[position]
+
+        try {
+            contentResolver.releasePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } catch (e: Exception) {}
+
+        videoUris.removeAt(position)
+        displayNames.removeAt(position)
+        adapter.notifyDataSetChanged()
+        saveList()
+
+        Toast.makeText(this, "已删除: $name", Toast.LENGTH_SHORT).show()
     }
 
     private fun saveList() {
