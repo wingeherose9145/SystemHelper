@@ -32,6 +32,8 @@ class PlayerActivity : AppCompatActivity() {
 
     private lateinit var videoUris: ArrayList<String>
     private var currentIndex = 0
+    private var retryCount = 0
+    private var useSoftwareDecoder = false
 
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var gestureDetector: GestureDetector
@@ -49,6 +51,7 @@ class PlayerActivity : AppCompatActivity() {
         seekBar = findViewById(R.id.seekBar)
         filenameText = findViewById(R.id.filenameText)
         rewindButton = findViewById(R.id.rewindButton)
+
         rewindButton.setOnClickListener { rewind5Seconds() }
 
         videoUris = intent.getStringArrayListExtra("video_list") ?: arrayListOf()
@@ -82,6 +85,7 @@ class PlayerActivity : AppCompatActivity() {
                 playNextVideo()
             } else if (state == Player.STATE_READY) {
                 showControlsTemporarily()
+                retryCount = 0
             }
         }
 
@@ -90,17 +94,25 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-            Toast.makeText(this@PlayerActivity, "播放出错: ${error.message}，切换下一个", Toast.LENGTH_SHORT).show()
-            playNextVideo()
+            Toast.makeText(this@PlayerActivity, "播放错误: ${error.message}", Toast.LENGTH_SHORT).show()
+            if (retryCount < 2) {
+                retryCount++
+                useSoftwareDecoder = true
+                playCurrentVideo()
+            } else {
+                playNextVideo()
+            }
         }
     }
 
     private fun playCurrentVideo() {
         try {
-            initPlayer()  // 每次都重建 player，解决状态污染
+            initPlayer()
 
             val uri = Uri.parse(videoUris[currentIndex])
-            filenameText.text = getFileNameFromUri(uri)
+            val fileName = getFileNameFromUri(uri)
+            filenameText.text = "正在播放: $fileName"
+            
             setVideoOrientation(uri)
 
             player?.let {
@@ -108,13 +120,94 @@ class PlayerActivity : AppCompatActivity() {
                 it.prepare()
                 it.play()
             }
+
+            // 2秒后检查是否仍在播放（辅助判断黑屏）
+            handler.postDelayed({
+                if (player?.playbackState == Player.STATE_READY && player?.isPlaying == true) {
+                    // 可在此扩展帧检测
+                }
+            }, 2000)
+
         } catch (e: Exception) {
-            Toast.makeText(this, "播放失败，切换下一个", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "加载失败: ${e.message}", Toast.LENGTH_SHORT).show()
             playNextVideo()
         }
     }
 
-    // 其余函数保持不变（setupControls, show/hide, gesture, seek, rewind, orientation 等）
+    private fun getFileNameFromUri(uri: Uri): String {
+        return try {
+            contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                if (cursor.moveToFirst()) cursor.getString(nameIndex) else uri.lastPathSegment ?: "未知视频"
+            } ?: "未知视频"
+        } catch (e: Exception) {
+            uri.lastPathSegment ?: "未知视频"
+        }
+    }
+
+    private fun setVideoOrientation(uri: Uri) {
+        try {
+            val retriever = MediaMetadataRetriever()
+            retriever.setDataSource(this, uri)
+            val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0
+            val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
+            requestedOrientation = if (height > width) {
+                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+            } else {
+                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
+            }
+            retriever.release()
+        } catch (e: Exception) {
+            requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
+
+    private fun shuffleAndRandomStart() {
+        if (videoUris.size <= 1) return
+        videoUris.shuffle(Random.Default)
+        currentIndex = Random.nextInt(videoUris.size)
+    }
+
+    private fun playNextVideo() {
+        currentIndex = (currentIndex + 1) % videoUris.size
+        retryCount = 0
+        useSoftwareDecoder = false
+        playCurrentVideo()
+    }
+
+    private fun playPreviousVideo() {
+        currentIndex = if (currentIndex > 0) currentIndex - 1 else videoUris.size - 1
+        retryCount = 0
+        useSoftwareDecoder = false
+        playCurrentVideo()
+    }
+
+    private fun setupGestureDetector() {
+        gestureDetector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onFling(e1: MotionEvent?, e2: MotionEvent, velocityX: Float, velocityY: Float): Boolean {
+                if (kotlin.math.abs(velocityX) > 700) {
+                    if (velocityX > 0) playPreviousVideo() else playNextVideo()
+                    return true
+                }
+                return false
+            }
+
+            // 双击刷新当前视频（解决黑屏）
+            override fun onDoubleTap(e: MotionEvent): Boolean {
+                Toast.makeText(this@PlayerActivity, "正在刷新当前视频...", Toast.LENGTH_SHORT).show()
+                retryCount = 0
+                useSoftwareDecoder = true
+                playCurrentVideo()
+                return true
+            }
+        })
+
+        playerView.setOnTouchListener { _, event ->
+            gestureDetector.onTouchEvent(event)
+            false
+        }
+    }
+
     private fun setupControls() {
         hideControlsHandler.postDelayed({ hideControls() }, 3000)
     }
@@ -150,35 +243,33 @@ class PlayerActivity : AppCompatActivity() {
         hideControlsHandler.postDelayed({ if (player?.isPlaying == true) hideControls() }, 3000)
     }
 
-    private fun shuffleAndRandomStart() {
-        if (videoUris.size <= 1) return
-        videoUris.shuffle(Random.Default)
-        currentIndex = Random.nextInt(videoUris.size)
+    private fun setupSeekBar() {
+        handler.post(object : Runnable {
+            override fun run() {
+                player?.let {
+                    if (it.duration > 0 && seekBar.visibility == View.VISIBLE) {
+                        seekBar.max = it.duration.toInt()
+                        seekBar.progress = it.currentPosition.toInt()
+                    }
+                }
+                handler.postDelayed(this, 500)
+            }
+        })
+
+        seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) player?.seekTo(progress.toLong())
+            }
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
+        })
     }
-
-    private fun getFileNameFromUri(uri: Uri): String = /* 同之前 */
-
-    private fun setVideoOrientation(uri: Uri) { /* 同之前 */ }
-
-    private fun playNextVideo() {
-        currentIndex = (currentIndex + 1) % videoUris.size
-        playCurrentVideo()
-    }
-
-    private fun playPreviousVideo() {
-        currentIndex = if (currentIndex > 0) currentIndex - 1 else videoUris.size - 1
-        playCurrentVideo()
-    }
-
-    private fun setupGestureDetector() { /* 同之前 */ }
-
-    private fun setupSeekBar() { /* 同之前 */ }
 
     private fun rewind5Seconds() {
         player?.let {
             if (it.duration > 0) {
-                val newPos = (it.currentPosition - 5000).coerceAtLeast(0)
-                it.seekTo(newPos)
+                val newPosition = (it.currentPosition - 5000).coerceAtLeast(0)
+                it.seekTo(newPosition)
                 showControlsTemporarily()
             }
         }
