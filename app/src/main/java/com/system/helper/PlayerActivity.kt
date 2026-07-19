@@ -32,8 +32,6 @@ class PlayerActivity : AppCompatActivity() {
 
     private lateinit var videoUris: ArrayList<String>
     private var currentIndex = 0
-    private var retryCount = 0
-    private var useSoftwareDecoder = false
 
     private val handler = Handler(Looper.getMainLooper())
     private lateinit var gestureDetector: GestureDetector
@@ -85,7 +83,6 @@ class PlayerActivity : AppCompatActivity() {
                 playNextVideo()
             } else if (state == Player.STATE_READY) {
                 showControlsTemporarily()
-                retryCount = 0
             }
         }
 
@@ -94,14 +91,8 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
-            Toast.makeText(this@PlayerActivity, "播放错误: ${error.message}", Toast.LENGTH_SHORT).show()
-            if (retryCount < 2) {
-                retryCount++
-                useSoftwareDecoder = true
-                playCurrentVideo()
-            } else {
-                playNextVideo()
-            }
+            Toast.makeText(this@PlayerActivity, "播放错误，切换下一个", Toast.LENGTH_SHORT).show()
+            playNextVideo()
         }
     }
 
@@ -110,9 +101,8 @@ class PlayerActivity : AppCompatActivity() {
             initPlayer()
 
             val uri = Uri.parse(videoUris[currentIndex])
-            val fileName = getFileNameFromUri(uri)
-            filenameText.text = "正在播放: $fileName"
-            
+            filenameText.text = getFileNameFromUri(uri)
+
             setVideoOrientation(uri)
 
             player?.let {
@@ -120,16 +110,8 @@ class PlayerActivity : AppCompatActivity() {
                 it.prepare()
                 it.play()
             }
-
-            // 2秒后检查是否仍在播放（辅助判断黑屏）
-            handler.postDelayed({
-                if (player?.playbackState == Player.STATE_READY && player?.isPlaying == true) {
-                    // 可在此扩展帧检测
-                }
-            }, 2000)
-
         } catch (e: Exception) {
-            Toast.makeText(this, "加载失败: ${e.message}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "播放失败，切换下一个", Toast.LENGTH_SHORT).show()
             playNextVideo()
         }
     }
@@ -138,10 +120,10 @@ class PlayerActivity : AppCompatActivity() {
         return try {
             contentResolver.query(uri, null, null, null, null)?.use { cursor ->
                 val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                if (cursor.moveToFirst()) cursor.getString(nameIndex) else uri.lastPathSegment ?: "未知视频"
+                if (cursor.moveToFirst()) cursor.getString(nameIndex) else "未知视频"
             } ?: "未知视频"
         } catch (e: Exception) {
-            uri.lastPathSegment ?: "未知视频"
+            "未知视频"
         }
     }
 
@@ -151,11 +133,7 @@ class PlayerActivity : AppCompatActivity() {
             retriever.setDataSource(this, uri)
             val width = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)?.toIntOrNull() ?: 0
             val height = retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)?.toIntOrNull() ?: 0
-            requestedOrientation = if (height > width) {
-                ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-            } else {
-                ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-            }
+            requestedOrientation = if (height > width) ActivityInfo.SCREEN_ORIENTATION_PORTRAIT else ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             retriever.release()
         } catch (e: Exception) {
             requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
@@ -170,15 +148,11 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun playNextVideo() {
         currentIndex = (currentIndex + 1) % videoUris.size
-        retryCount = 0
-        useSoftwareDecoder = false
         playCurrentVideo()
     }
 
     private fun playPreviousVideo() {
         currentIndex = if (currentIndex > 0) currentIndex - 1 else videoUris.size - 1
-        retryCount = 0
-        useSoftwareDecoder = false
         playCurrentVideo()
     }
 
@@ -192,11 +166,9 @@ class PlayerActivity : AppCompatActivity() {
                 return false
             }
 
-            // 双击刷新当前视频（解决黑屏）
+            // 双击屏幕刷新当前视频（解决黑屏）
             override fun onDoubleTap(e: MotionEvent): Boolean {
-                Toast.makeText(this@PlayerActivity, "正在刷新当前视频...", Toast.LENGTH_SHORT).show()
-                retryCount = 0
-                useSoftwareDecoder = true
+                Toast.makeText(this@PlayerActivity, "刷新当前视频...", Toast.LENGTH_SHORT).show()
                 playCurrentVideo()
                 return true
             }
@@ -209,19 +181,7 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun setupControls() {
-        hideControlsHandler.postDelayed({ hideControls() }, 3000)
-    }
-
-    private fun togglePlaybackAndControls() {
-        player?.let {
-            if (it.isPlaying) {
-                it.pause()
-                showControls()
-            } else {
-                it.play()
-                hideControls()
-            }
-        }
+        hideControlsHandler.postDelayed({ hideControls() }, 2500)
     }
 
     private fun showControls() {
@@ -240,7 +200,7 @@ class PlayerActivity : AppCompatActivity() {
     private fun showControlsTemporarily() {
         showControls()
         hideControlsHandler.removeCallbacksAndMessages(null)
-        hideControlsHandler.postDelayed({ if (player?.isPlaying == true) hideControls() }, 3000)
+        hideControlsHandler.postDelayed({ if (player?.isPlaying == true) hideControls() }, 2500)
     }
 
     private fun setupSeekBar() {
@@ -271,6 +231,19 @@ class PlayerActivity : AppCompatActivity() {
                 val newPosition = (it.currentPosition - 5000).coerceAtLeast(0)
                 it.seekTo(newPosition)
                 showControlsTemporarily()
+            }
+        }
+    }
+
+    // 点击屏幕：播放/暂停 + 显示控件
+    private fun togglePlaybackAndControls() {
+        player?.let {
+            if (it.isPlaying) {
+                it.pause()
+                showControls()
+            } else {
+                it.play()
+                hideControls()
             }
         }
     }
